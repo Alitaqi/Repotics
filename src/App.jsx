@@ -1,23 +1,32 @@
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Search } from "lucide-react";
-import { motion } from "framer-motion";
-import axios from "axios";
-function App() {
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-
+export default function App() {
   return (
-    <>
-    <Button>HEllo</Button>
-    <Search className="w-6 h-6 text-gray-700" />
-     <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 10 }}>
-      Hello Reportics
-    </motion.h1>
-      
-    </>
-  )
+    <div className="p-6">
+      <Dialog>
+        <DialogTrigger asChild>
+          <button className="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600">
+            Open Dialog
+          </button>
+        </DialogTrigger>
+        
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. It will permanently delete your account.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="mt-4">Here you can put any content or form.</p>
+        </DialogContent>
+      </Dialog>
+      <div>
+      <div>
+        
+      </div>
+      </div>
+    </div>
+    
+
+  );
 }
-
-export default App
-
-
