@@ -1,3 +1,70 @@
+📂 public/
+   ├── favicon.ico
+   ├── robots.txt
+   ├── ... any static files that don’t get processed by Vite
+
+📂 src/
+   📂 assets/              # Images, fonts, static SVGs
+       ├── logo.svg
+       └── images/
+   
+   📂 components/          # Reusable UI components (buttons, cards, modals, etc.)
+       ├── ui/             # Shadcn, Radix, Tailwind-styled UI components
+       ├── layout/         # Navbar, Footer, Sidebar, etc.
+       └── custom/         # Your own custom reusable components
+   
+   📂 features/            # Redux slices + related components
+       ├── auth/           # Authentication-related state + components
+       ├── products/       # Example feature
+       └── users/          # Example feature
+   
+   📂 pages/               # Pages used in React Router
+       ├── Home.jsx
+       ├── About.jsx
+       ├── Contact.jsx
+       └── NotFound.jsx
+
+   📂 lib/                 # Config files, helpers, and utilities
+       ├── axios.js        # Axios instance with baseURL + interceptors
+       ├── constants.js    # App-wide constants
+       ├── helpers.js      # Utility functions
+       └── redux/          # Store configuration
+           ├── store.js
+           └── apiSlice.js (for RTK Query later)
+
+   📂 styles/              # Global CSS, Tailwind config overrides
+       ├── globals.css
+       └── variables.css
+
+   App.jsx                 # App shell — only handles layout + routes
+   main.jsx                # ReactDOM.createRoot and wraps App in Providers
+   index.css               # Tailwind base styles (if not inside globals.css)
+
+📄 package.json
+📄 vite.config.js
+📄 tailwind.config.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
