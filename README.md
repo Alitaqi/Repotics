@@ -19,7 +19,7 @@
        └── users/          # Example feature
    
    📂 pages/               # Pages used in React Router
-       ├── Home.jsx
+       ├── Home.jsx 
        ├── About.jsx
        ├── Contact.jsx
        └── NotFound.jsx

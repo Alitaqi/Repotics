@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-
+import Home from "./pages/Home"
 export default function App() {
   return (
   <>
@@ -9,7 +9,7 @@ export default function App() {
   </nav>
   <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
+      {/* <Route path="/about" element={<About />} /> */}
   </Routes>
   </BrowserRouter>
   </>
