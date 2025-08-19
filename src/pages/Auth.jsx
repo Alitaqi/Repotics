@@ -1,20 +1,20 @@
 // pages/Auth.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import sampleVideo from "@/assets/videos/v4.mp4";
-import { useRegisterUserMutation, useLoginUserMutation } from "@/lib/redux/api/authApi.js"; 
+// import sampleVideo from "@/assets/videos/v4.mp4";
+import { useRegisterUserMutation, useLoginUserMutation } from "@/lib/redux/api/authApi.js";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/lib/redux/slices/authSlice.js";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { User, Mail, Lock, Calendar } from "lucide-react";
 import debounce from "lodash.debounce";
+import Logo from "@/assets/Logo.svg"; // Assuming you have a logo image
 
 export default function Auth() {
   const dispatch = useDispatch();
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: "", username: "", email: "", password: "", dob: "" });
   const [showDobAlert, setShowDobAlert] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
@@ -36,7 +36,7 @@ export default function Auth() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
     if (name === "username") checkUsername(value);
   };
 
@@ -74,139 +74,141 @@ export default function Auth() {
   return (
     <div className="relative w-screen h-screen overflow-hidden">
       {/* Background Video */}
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+      <div className="absolute top-0 left-0 w-full h-full -z-10">
       <video
-        src={sampleVideo}
+        src="https://res.cloudinary.com/dd7mk4do3/video/upload/v1755585083/loginbackgroun_ydkfvk.mp4"
         autoPlay
         loop
         muted
         playsInline
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          transform: "translate(-50%, -50%)",
-          zIndex: -1, // ensures video stays in the background
-        }}
+        className="object-cover w-full h-full"
       />
-      
-      {/* Overlay & Form */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[5px]" />
+      </div>
+
+      {/* Overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-10 w-full max-w-md p-8 border shadow-lg rounded-2xl bg-white/10 backdrop-blur-lg border-white/20"
+          transition={{ duration: 0.6 }}
+          className="relative z-10 w-full max-w-md p-8 mx-4 bg-white shadow-xl rounded-2xl sm:mx-0"
         >
-          <h2 className="mb-6 text-3xl font-bold text-center text-white">
-            {isLogin ? "Login" : "Sign Up"}
+          {/* Logo Circle */}
+          <div className="flex justify-center mb-4">
+            <div className="rounded-full w-14 h-14" >
+              <img src={Logo} alt="Logo" className="object-cover w-full h-full rounded-full" />
+            </div>
+          </div>
+
+          {/* Title */}
+          <h2 className="mb-6 text-2xl font-semibold text-center text-gray-800">
+            {isLogin ? "Log in" : "Sign up"}
           </h2>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
-                <div className="relative">
-                  <Label className="text-white">Name</Label>
+                <div>
+                  <Label htmlFor="name" className="mb-2 text-gray-700">Name</Label>
                   <Input
+                    id="name"
                     name="name"
-                    placeholder="Ali Taqi"
+                  placeholder="Ali Taqi"
                     value={form.name}
                     onChange={handleChange}
-                    className="pl-10 text-white placeholder-white/70"
                   />
-                  <User className="absolute left-3 top-12 text-white/70" />
                 </div>
 
-                <div className="relative">
-                  <Label className="text-white">Username</Label>
+                <div>
+                  <Label htmlFor="username" className="mb-2 text-gray-700 ">Username</Label>
                   <Input
+                    id="username"
                     name="username"
                     placeholder="alitaqi349"
                     value={form.username}
                     onChange={handleChange}
-                    className="pl-10 text-white placeholder-white/70"
                   />
-                  <User className="absolute left-3 top-12 text-white/70" />
                   {usernameAvailable !== null && (
-                    <p className={`mt-1 text-sm ${usernameAvailable ? "text-green-400" : "text-red-400"}`}>
+                    <p className={`mt-1 text-sm ${usernameAvailable ? "text-green-500" : "text-red-500"}`}>
                       {usernameAvailable ? "Username available" : "Username taken"}
                     </p>
                   )}
                 </div>
 
-                <div className="relative">
-                  <Label className="text-white">Date of Birth</Label>
+                <div>
+                  <Label htmlFor="dob" className="mb-2 text-gray-700">Date of Birth</Label>
                   <Input
-                    type="date"
+                    id="dob"
                     name="dob"
+                    placeholder="YYYY-MM-DD"
                     value={form.dob}
                     onChange={handleChange}
-                    className="pl-10 text-white placeholder-white/70"
                   />
-                  <Calendar className="absolute left-3 top-12 text-white/70" />
                 </div>
               </>
             )}
 
-            <div className="relative">
-              <Label className="text-white">Email {isLogin ? "" : "/ Username"}</Label>
+            <div>
+              <Label htmlFor="email" className="mb-2 text-gray-700">
+                {isLogin ? "Email / Username" : "Email"}
+              </Label>
               <Input
+                id="email"
                 name="email"
                 placeholder="example@mail.com"
                 value={form.email}
                 onChange={handleChange}
-                className="pl-10 text-white placeholder-white/70"
               />
-              <Mail className="absolute left-3 top-12 text-white/70" />
             </div>
 
-            <div className="relative">
-              <Label className="text-white">Password</Label>
+            <div>
+              <Label htmlFor="password" className="mb-2 text-gray-700">Password</Label>
               <Input
                 type="password"
+                id="password"
                 name="password"
                 placeholder="********"
                 value={form.password}
                 onChange={handleChange}
-                className="pl-10 text-white placeholder-white/70"
               />
-              <Lock className="absolute left-3 top-12 text-white/70" />
             </div>
 
-            <Button type="submit" className="w-full mt-4">
-              {isLogin ? "Login" : "Sign Up"}
+            <Button type="submit" className="w-full mt-4 bg-[#1B4FCE] hover:bg-[#1B4FCE]/95">
+              {isLogin ? "Log in" : "Sign up"}
             </Button>
           </form>
 
-          <p className="mt-4 text-center text-white/80">
-            {isLogin ? "No account?" : "Already have an account?"}{" "}
+          {/* Switch login/signup */}
+          <p className="mt-4 text-sm text-center text-gray-600">
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-blue-400 underline"
+             onClick={() => {
+              setIsLogin(!isLogin);
+              setForm({ name: "", username: "", email: "", password: "", dob: "" }); // reset fields
+              setUsernameAvailable(null); // optional: clear username availability check
+  }}
+              className="font-medium text-blue-500 hover:underline"
             >
-              {isLogin ? "Sign Up" : "Login"}
+              {isLogin ? "Sign up" : "Log in"}
             </button>
           </p>
         </motion.div>
       </div>
-      </div>
 
-      {/* DOB Alert Dialog */}
+      {/* DOB Alert */}
       <AlertDialog open={showDobAlert} onOpenChange={setShowDobAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Parental Alert</AlertDialogTitle>
             <AlertDialogDescription>
-              You must be at least 16 years old to sign up. This website contains sensitive material. Please have parental supervision.
+              You must be at least 16 years old to sign up. This website contains sensitive material.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogAction onClick={() => setShowDobAlert(false)}>OK</AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
     </div>
-    
   );
 }
