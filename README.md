@@ -44,19 +44,6 @@
 📄 vite.config.js
 📄 tailwind.config.js
 
-
-
----------------------------------------------------------------------------
-
-Profile module:
-
-things that will be in this module are as follow
-
-1. each person will have unique profile that will work on basis on cookies
-2. the profile will have access control if the profile=user logged in we will allow them to add post directly from thier page and allow cahning of things
-2. profile data will be posts from backend so if we get ai setup the data of post will automatically become perfect
-
-
 # Step 1: Make sure ali is pushed
 git add .
 git commit -m "Feature: short description"
@@ -77,20 +64,30 @@ git checkout ali
 git merge main
 
 
+---------------------------------------------------------------------------
 
+Profile module:
 
+things that will be in this module are as follow
 
+1. each person will have unique profile that will work on basis on cookies
+2. the profile will have access control if the profile=user logged in we will allow them to add post directly from thier page and allow cahning of things 
+3. make a preson and give him access to government and then just go and put control so if a person is verified then just show extra report button staic for now
+3. profile data will be posts from backend so if we get ai setup the data of post will automatically become perfect but that means this feature will not be finished unless we get the ai api properly set up
+followes popup
 
+Settings:
+then i will mmke setting tab where user will be able to properly change its detaiils and mayeb btton for pushed like a toggle idk and for sms we wil take number and i dont think we need anyother things in settings for now
+
+post page: popup with comments and pagination too
 Now:
-post page
+
 feed
-prodile
-settings
 notifaction section
 search page
-reptoing page
-missing person reprot page
-missing eprson page
+....reptoing page
+....missing person reprot page
+....missing eprson page
 
 
 ----------------------
