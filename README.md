@@ -46,6 +46,15 @@
 
 
 
+---------------------------------------------------------------------------
+
+Profile module:
+
+things that will be in this module are as follow
+
+1. each person will have unique profile that will work on basis on cookies
+2. the profile will have access control if the profile=user logged in we will allow them to add post directly from thier page and allow cahning of things
+2. profile data will be posts from backend so if we get ai setup the data of post will automatically become perfect
 
 
 
@@ -53,6 +62,28 @@
 
 
 
+
+
+Now:
+post page
+feed
+prodile
+settings
+notifaction section
+search page
+reptoing page
+missing person reprot page
+missing eprson page
+
+
+----------------------
+Future:
+dashboard see module in reqs and this AI Analytics and Suggestions for Law Enforcement Agencies too
+ladnign page
+Real-Time Alerts 
+heamap  see module in res Interactive Heatmap & Statistics 
+fast api ai lagani hai
+heatmap, real time alerts and dashbord all require us to have proper data 
 
 
 
