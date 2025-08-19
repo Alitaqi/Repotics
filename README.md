@@ -57,7 +57,24 @@ things that will be in this module are as follow
 2. profile data will be posts from backend so if we get ai setup the data of post will automatically become perfect
 
 
+# Step 1: Make sure ali is pushed
+git add .
+git commit -m "Feature: short description"
+git push origin ali
 
+# Step 2: Switch to main & update it
+git checkout main
+git pull origin main
+
+# Step 3: Merge ali → main
+git merge ali
+
+# Step 4: Push updated main
+git push origin main
+
+# Step 5: Update ali for next task
+git checkout ali
+git merge main
 
 
 
