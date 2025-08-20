@@ -188,159 +188,157 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 gap-6 mt-10 md:grid-cols-3">
-          {/* Left Side - Bio + Badges + Following */}
-          <div className="space-y-6">
-            {/* Bio Card */}
-                  
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>About</CardTitle>
-                {!isEditingBio ? (
-                  <Pencil
-                    className="w-4 h-4 cursor-pointer"
-                    onClick={() => setIsEditingBio(true)}
-                  />
-                ) : (
-                  <div className="flex gap-2">
-                    <Check
-                      className="w-4 h-4 text-green-600 cursor-pointer"
-                      onClick={saveBio}
-                    />
-                    <X
-                      className="w-4 h-4 text-red-600 cursor-pointer"
-                      onClick={() => {
-                        setBioInput(user.bio);
-                        setIsEditingBio(false);
-                      }}
-                    />
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent>
-                {!isEditingBio ? (
-                  <div className="overflow-y-auto whitespace-pre-line max-h-58">
-                    <p className="text-gray-700 break-words">{user.bio}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <textarea
-                      value={bioInput}
-                      onChange={handleBioChange}
-                      className="w-full p-2 border rounded-md min-h-[100px]"
-                      placeholder="Tell us about yourself..."
-                    />
-                    <div className="flex justify-between mt-2 text-xs text-gray-500">
-                      <span>{BIO_MAX_LENGTH - bioInput.length} characters remaining</span>
-                      <span>{bioInput.length}/{BIO_MAX_LENGTH}</span>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Badges */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Badges</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {user.badges.map((badge, i) => (
-                  <Badge key={i} variant="secondary">
-                    {badge}
-                  </Badge>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Following */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Following</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-3 gap-3">
-                {user.followingUsers.slice(0, 9).map((u) => (
-                  <div key={u.id} className="flex flex-col items-center">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={u.avatar} />
-                      <AvatarFallback>{u.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <p className="mt-1 text-xs">{u.name}</p>
-                  </div>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="col-span-3 mt-2"
-                  onClick={() => setShowFollowers(true)}
-                >
-                  See all followers
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Side - Posts */}
-          {/* Right Side - Reports + Posts */}
-<div className="space-y-6 md:col-span-2">
-  {/* Report Actions Card */}
+       {/* Main Content */}
+<div className="flex flex-col mt-10 md:flex-row md:gap-6">
+  {/* Left Side - Bio + Badges + Following */}
+<div className="self-start w-full space-y-6 md:sticky md:w-1/3 top-20">
+  {/* Bio Card */}
   <Card>
-    <CardHeader>
-      <CardTitle>Quick Actions</CardTitle>
+    <CardHeader className="flex flex-row items-center justify-between">
+      <CardTitle>About</CardTitle>
+      {!isEditingBio ? (
+        <Pencil
+          className="w-4 h-4 cursor-pointer"
+          onClick={() => setIsEditingBio(true)}
+        />
+      ) : (
+        <div className="flex gap-2">
+          <Check
+            className="w-4 h-4 text-green-600 cursor-pointer"
+            onClick={saveBio}
+          />
+          <X
+            className="w-4 h-4 text-red-600 cursor-pointer"
+            onClick={() => {
+              setBioInput(user.bio);
+              setIsEditingBio(false);
+            }}
+          />
+        </div>
+      )}
     </CardHeader>
     <CardContent>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Button  className="py-6 text-lg font-semibold text-white bg-red-600 hover:bg-red-700" onClick={() => setOpen(true)}>
-          <AlertTriangle className="w-5 h-5 mr-2" />
-          Report a Crime
-        </Button>
-        <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">
-          <Search className="w-5 h-5 mr-2" />
-          Report Missing Person
-        </Button>
-      </div>
+      {!isEditingBio ? (
+        <div className="overflow-y-auto whitespace-pre-line max-h-58">
+          <p className="text-gray-700 break-words">{user.bio}</p>
+        </div>
+      ) : (
+        <div>
+          <textarea
+            value={bioInput}
+            onChange={handleBioChange}
+            className="w-full p-2 border rounded-md min-h-[100px]"
+            placeholder="Tell us about yourself..."
+          />
+          <div className="flex justify-between mt-2 text-xs text-gray-500">
+            <span>{BIO_MAX_LENGTH - bioInput.length} characters remaining</span>
+            <span>{bioInput.length}/{BIO_MAX_LENGTH}</span>
+          </div>
+        </div>
+      )}
     </CardContent>
   </Card>
 
-
-  {/* Posts Section */}
+  {/* Badges */}
   <Card>
     <CardHeader>
-      <CardTitle>Posts</CardTitle>
+      <CardTitle>Badges</CardTitle>
     </CardHeader>
-    <CardContent>
-      {/* Post Component - replace with your actual Post component */}
-      <div className="space-y-4">
-        <Post 
-          author={user.name}
-          avatar={profileImage}
-          content="This is a sample post content that would appear in the feed."
-          timestamp="2 hours ago"
-          likes={15}
-          comments={3}
-        />
-        <Post 
-          author={user.name}
-          avatar={profileImage}
-          content="Another post example showing how the feed would look with multiple posts."
-          timestamp="1 day ago"
-          likes={42}
-          comments={7}
-        />
-        <Post 
-          author={user.name}
-          avatar={profileImage}
-          content="Community safety is everyone's responsibility. Stay vigilant and report suspicious activities."
-          timestamp="3 days ago"
-          likes={28}
-          comments={5}
-        />
-      </div>
+    <CardContent className="flex flex-wrap gap-2">
+      {user.badges.map((badge, i) => (
+        <Badge key={i} variant="secondary">
+          {badge}
+        </Badge>
+      ))}
+    </CardContent>
+  </Card>
+
+  {/* Following */}
+  <Card>
+    <CardHeader>
+      <CardTitle>Following</CardTitle>
+    </CardHeader>
+    <CardContent className="grid grid-cols-3 gap-3">
+      {user.followingUsers.slice(0, 9).map((u) => (
+        <div key={u.id} className="flex flex-col items-center">
+          <Avatar className="w-12 h-12">
+            <AvatarImage src={u.avatar} />
+            <AvatarFallback>{u.name[0]}</AvatarFallback>
+          </Avatar>
+          <p className="mt-1 text-xs">{u.name}</p>
+        </div>
+      ))}
+      <Button
+        variant="outline"
+        size="sm"
+        className="col-span-3 mt-2"
+        onClick={() => setShowFollowers(true)}
+      >
+        See all followers
+      </Button>
     </CardContent>
   </Card>
 </div>
+
+  {/* Right Side - Reports + Posts */}
+  <div className="w-full space-y-6 md:w-2/3">
+    {/* Report Actions Card */}
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Button className="py-6 text-lg font-semibold text-white bg-red-600 hover:bg-red-700" onClick={() => setOpen(true)}>
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            Report a Crime
+          </Button>
+          <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">
+            <Search className="w-5 h-5 mr-2" />
+            Report Missing Person
+          </Button>
         </div>
+      </CardContent>
+    </Card>
+
+    {/* Posts Section */}
+    <Card>
+      <CardHeader>
+        <CardTitle>Posts</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Post Component - replace with your actual Post component */}
+        <div className="space-y-4">
+          <Post 
+            author={user.name}
+            avatar={profileImage}
+            content="This is a sample post content that would appear in the feed."
+            timestamp="2 hours ago"
+            likes={15}
+            comments={3}
+          />
+          <Post 
+            author={user.name}
+            avatar={profileImage}
+            content="Another post example showing how the feed would look with multiple posts."
+            timestamp="1 day ago"
+            likes={42}
+            comments={7}
+          />
+          <Post 
+            author={user.name}
+            avatar={profileImage}
+            content="Community safety is everyone's responsibility. Stay vigilant and report suspicious activities."
+            timestamp="3 days ago"
+            likes={28}
+            comments={5}
+          />
+          {/* Add more posts to test scrolling */}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</div>
       </div>
 
       {/* Followers Dialog */}

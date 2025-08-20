@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   return (
-    <nav className="flex items-center justify-between w-full px-6 py-3 bg-white shadow-sm">
+    <nav className="sticky top-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-sm">
       {/* Left - Logo */}
       <div className="text-2xl font-bold text-blue-600">Reportics</div>
 
