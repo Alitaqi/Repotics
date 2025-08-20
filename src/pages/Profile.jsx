@@ -1,92 +1,66 @@
 // pages/Profile.jsx
 import { useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, Camera, Check, X, BadgeCheck, AlertTriangle, Search  } from "lucide-react";
-import Post from "@/components/layout/PostCard"; // Assuming you have a Post component
-import ReportWizard from "@/components/layout/ReportWizard"; // Importing the ReportWizard component
-export default function Profile() {
-  // dummy user data (later replace with redux/rtk query)
-  const [user, setUser] = useState({
-    name: "John Doe",
-    username: "johndoe",
-    verified: true,
-    location: "Gotham City",
-    birthdate: "Born March 30, 2000",
-    posts: 42,
-    followers: 123,
-    following: 87,
-    bio: "Vigilante by night. Billionaire by day.",
-    badges: ["Batman", "Vigilante", "Detective"],
-    followingUsers: [
-      { id: 1, name: "Bruce Wayne", avatar: "https://i.pravatar.cc/50?u=1" },
-      { id: 2, name: "Clark Kent", avatar: "https://i.pravatar.cc/50?u=2" },
-      { id: 3, name: "Diana Prince", avatar: "https://i.pravatar.cc/50?u=3" },
-      { id: 4, name: "Barry Allen", avatar: "https://i.pravatar.cc/50?u=4" },
-      { id: 5, name: "Arthur Curry", avatar: "https://i.pravatar.cc/50?u=5" },
-      { id: 6, name: "Hal Jordan", avatar: "https://i.pravatar.cc/50?u=6" },
-      { id: 7, name: "Oliver Queen", avatar: "https://i.pravatar.cc/50?u=7" },
-      { id: 8, name: "Selina Kyle", avatar: "https://i.pravatar.cc/50?u=8" },
-      { id: 9, name: "Harley Quinn", avatar: "https://i.pravatar.cc/50?u=9" },
-    ],
-  });
+import { Pencil, Camera, Check, X, BadgeCheck, AlertTriangle, Search } from "lucide-react";
+import Post from "@/components/layout/PostCard";
+import ReportWizard from "@/components/layout/ReportWizard";
+import { setBio, setBannerImage, setProfileImage, unfollow } from "@/lib/redux/slices/profileSlice";
 
+export default function Profile() {
+  const dispatch = useDispatch();
+
+  // Select from Redux
+  const user = useSelector((s) => s.profile.user);
+  const bannerImage = useSelector((s) => s.profile.images.bannerImage);
+  const profileImage = useSelector((s) => s.profile.images.profileImage);
+
+  // Local UI state only (no visual change)
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState(user.bio);
   const [showFollowers, setShowFollowers] = useState(false);
-  const [bannerImage, setBannerImage] = useState("\\src\\assets\\images\\c6.png");
-  const [profileImage, setProfileImage] = useState("https://i.pravatar.cc/150?u=me");
-  
   const [open, setOpen] = useState(false);
+
   const bannerInputRef = useRef(null);
   const profileInputRef = useRef(null);
-  
-  const BIO_MAX_LENGTH = 150; // Character limit for bio
+
+  const BIO_MAX_LENGTH = 150;
 
   const handleBannerUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setBannerImage(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      dispatch(setBannerImage(event.target.result));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleProfileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setProfileImage(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      dispatch(setProfileImage(event.target.result));
+    };
+    reader.readAsDataURL(file);
   };
 
-  const triggerBannerInput = () => {
-    bannerInputRef.current?.click();
-  };
-
-  const triggerProfileInput = () => {
-    profileInputRef.current?.click();
-  };
+  const triggerBannerInput = () => bannerInputRef.current?.click();
+  const triggerProfileInput = () => profileInputRef.current?.click();
 
   const handleBioChange = (e) => {
     const value = e.target.value;
-    if (value.length <= BIO_MAX_LENGTH) {
-      setBioInput(value);
-    }
+    if (value.length <= BIO_MAX_LENGTH) setBioInput(value);
   };
 
   const saveBio = () => {
-    setUser({ ...user, bio: bioInput });
+    dispatch(setBio(bioInput));
     setIsEditingBio(false);
   };
 
@@ -108,7 +82,7 @@ export default function Profile() {
           accept="image/*"
           className="hidden"
         />
-        
+
         {/* Unified Top Section */}
         <div className="relative overflow-hidden bg-white rounded-lg shadow-sm">
           {/* Banner */}
@@ -148,197 +122,198 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* User Info - Now positioned next to profile picture */}
-          <div className="pt-20 ml-0 md:pt-6 md:ml-40">
-            <div className="flex flex-col justify-between md:flex-row md:items-center">
-              <div className="md:max-w-[60%]">
-                <h1 className="flex items-center gap-2 text-2xl font-bold text-black">
-                  {user.name}
-                  {user.verified && (
-                    <BadgeCheck className="w-5 h-5 text-blue-500" />
-                  )}
-                </h1>
-                <p className="text-gray-500">@{user.username}</p>
-                <p className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                  {user.location} <span>•</span> {user.birthdate}
-                </p>
-              </div>
-              
-                      <div className="flex items-center gap-8 mt-4 md:mt-0">
-                <div className="text-center">
-                  <p className="font-bold text-black">{user.posts}</p>
-                  <p className="text-sm text-gray-500">Posts</p>
+            {/* User Info */}
+            <div className="pt-20 ml-0 md:pt-6 md:ml-40">
+              <div className="flex flex-col justify-between md:flex-row md:items-center">
+                <div className="md:max-w-[60%]">
+                  <h1 className="flex items-center gap-2 text-2xl font-bold text-black">
+                    {user.name}
+                    {user.verified && (
+                      <BadgeCheck className="w-5 h-5 text-blue-500" />
+                    )}
+                  </h1>
+                  <p className="text-gray-500">@{user.username}</p>
+                  <p className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                    {user.location} <span>•</span> {user.birthdate}
+                  </p>
                 </div>
-                <div className="w-px h-8 mx-2 bg-gray-300"></div>
-                <div
-                  className="text-center cursor-pointer"
-                  onClick={() => setShowFollowers(true)}
-                >
-                  <p className="font-bold text-black">{user.followers}</p>
-                  <p className="text-sm text-gray-500">Followers</p>
-                </div>
-                <div className="w-px h-8 mx-2 bg-gray-300"></div>
-                <div className="text-center">
-                  <p className="font-bold text-black">{user.following}</p>
-                  <p className="text-sm text-gray-500">Following</p>
+
+                <div className="flex items-center gap-8 mt-4 md:mt-0">
+                  <div className="text-center">
+                    <p className="font-bold text-black">{user.posts}</p>
+                    <p className="text-sm text-gray-500">Posts</p>
+                  </div>
+                  <div className="w-px h-8 mx-2 bg-gray-300"></div>
+                  <div
+                    className="text-center cursor-pointer"
+                    onClick={() => setShowFollowers(true)}
+                  >
+                    <p className="font-bold text-black">{user.followers}</p>
+                    <p className="text-sm text-gray-500">Followers</p>
+                  </div>
+                  <div className="w-px h-8 mx-2 bg-gray-300"></div>
+                  <div className="text-center">
+                    <p className="font-bold text-black">{user.following}</p>
+                    <p className="text-sm text-gray-500">Following</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col mt-10 md:flex-row md:gap-6">
+          {/* Left Side - Bio + Badges + Following */}
+          <div className="self-start w-full space-y-6 md:sticky md:w-1/3 top-20">
+            {/* Bio Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>About</CardTitle>
+                {!isEditingBio ? (
+                  <Pencil
+                    className="w-4 h-4 cursor-pointer"
+                    onClick={() => setIsEditingBio(true)}
+                  />
+                ) : (
+                  <div className="flex gap-2">
+                    <Check
+                      className="w-4 h-4 text-green-600 cursor-pointer"
+                      onClick={saveBio}
+                    />
+                    <X
+                      className="w-4 h-4 text-red-600 cursor-pointer"
+                      onClick={() => {
+                        setBioInput(user.bio);
+                        setIsEditingBio(false);
+                      }}
+                    />
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent>
+                {!isEditingBio ? (
+                  <div className="overflow-y-auto whitespace-pre-line max-h-58">
+                    <p className="text-gray-700 break-words">{user.bio}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <textarea
+                      value={bioInput}
+                      onChange={handleBioChange}
+                      className="w-full p-2 border rounded-md min-h-[100px]"
+                      placeholder="Tell us about yourself..."
+                    />
+                    <div className="flex justify-between mt-2 text-xs text-gray-500">
+                      <span>{150 - bioInput.length} characters remaining</span>
+                      <span>{bioInput.length}/150</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Badges */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Badges</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {user.badges.map((badge, i) => (
+                  <Badge key={i} variant="secondary">
+                    {badge}
+                  </Badge>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Following */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Following</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-3">
+                {user.followingUsers.slice(0, 9).map((u) => (
+                  <div key={u.id} className="flex flex-col items-center">
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={u.avatar} />
+                      <AvatarFallback>{u.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <p className="mt-1 text-xs">{u.name}</p>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="col-span-3 mt-2"
+                  onClick={() => setShowFollowers(true)}
+                >
+                  See all followers
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side - Reports + Posts */}
+          <div className="w-full space-y-6 md:w-2/3">
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Button
+                    className="py-6 text-lg font-semibold text-white bg-red-600 hover:bg-red-700"
+                    onClick={() => setOpen(true)}
+                  >
+                    <AlertTriangle className="w-5 h-5 mr-2" />
+                    Report a Crime
+                  </Button>
+                  <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">
+                    <Search className="w-5 h-5 mr-2" />
+                    Report Missing Person
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Posts Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Posts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Post
+                    author={user.name}
+                    avatar={profileImage}
+                    content="This is a sample post content that would appear in the feed."
+                    timestamp="2 hours ago"
+                    likes={15}
+                    comments={3}
+                  />
+                  <Post
+                    author={user.name}
+                    avatar={profileImage}
+                    content="Another post example showing how the feed would look with multiple posts."
+                    timestamp="1 day ago"
+                    likes={42}
+                    comments={7}
+                  />
+                  <Post
+                    author={user.name}
+                    avatar={profileImage}
+                    content="Community safety is everyone's responsibility. Stay vigilant and report suspicious activities."
+                    timestamp="3 days ago"
+                    likes={28}
+                    comments={5}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-       {/* Main Content */}
-<div className="flex flex-col mt-10 md:flex-row md:gap-6">
-  {/* Left Side - Bio + Badges + Following */}
-<div className="self-start w-full space-y-6 md:sticky md:w-1/3 top-20">
-  {/* Bio Card */}
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between">
-      <CardTitle>About</CardTitle>
-      {!isEditingBio ? (
-        <Pencil
-          className="w-4 h-4 cursor-pointer"
-          onClick={() => setIsEditingBio(true)}
-        />
-      ) : (
-        <div className="flex gap-2">
-          <Check
-            className="w-4 h-4 text-green-600 cursor-pointer"
-            onClick={saveBio}
-          />
-          <X
-            className="w-4 h-4 text-red-600 cursor-pointer"
-            onClick={() => {
-              setBioInput(user.bio);
-              setIsEditingBio(false);
-            }}
-          />
-        </div>
-      )}
-    </CardHeader>
-    <CardContent>
-      {!isEditingBio ? (
-        <div className="overflow-y-auto whitespace-pre-line max-h-58">
-          <p className="text-gray-700 break-words">{user.bio}</p>
-        </div>
-      ) : (
-        <div>
-          <textarea
-            value={bioInput}
-            onChange={handleBioChange}
-            className="w-full p-2 border rounded-md min-h-[100px]"
-            placeholder="Tell us about yourself..."
-          />
-          <div className="flex justify-between mt-2 text-xs text-gray-500">
-            <span>{BIO_MAX_LENGTH - bioInput.length} characters remaining</span>
-            <span>{bioInput.length}/{BIO_MAX_LENGTH}</span>
-          </div>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-
-  {/* Badges */}
-  <Card>
-    <CardHeader>
-      <CardTitle>Badges</CardTitle>
-    </CardHeader>
-    <CardContent className="flex flex-wrap gap-2">
-      {user.badges.map((badge, i) => (
-        <Badge key={i} variant="secondary">
-          {badge}
-        </Badge>
-      ))}
-    </CardContent>
-  </Card>
-
-  {/* Following */}
-  <Card>
-    <CardHeader>
-      <CardTitle>Following</CardTitle>
-    </CardHeader>
-    <CardContent className="grid grid-cols-3 gap-3">
-      {user.followingUsers.slice(0, 9).map((u) => (
-        <div key={u.id} className="flex flex-col items-center">
-          <Avatar className="w-12 h-12">
-            <AvatarImage src={u.avatar} />
-            <AvatarFallback>{u.name[0]}</AvatarFallback>
-          </Avatar>
-          <p className="mt-1 text-xs">{u.name}</p>
-        </div>
-      ))}
-      <Button
-        variant="outline"
-        size="sm"
-        className="col-span-3 mt-2"
-        onClick={() => setShowFollowers(true)}
-      >
-        See all followers
-      </Button>
-    </CardContent>
-  </Card>
-</div>
-
-  {/* Right Side - Reports + Posts */}
-  <div className="w-full space-y-6 md:w-2/3">
-    {/* Report Actions Card */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Button className="py-6 text-lg font-semibold text-white bg-red-600 hover:bg-red-700" onClick={() => setOpen(true)}>
-            <AlertTriangle className="w-5 h-5 mr-2" />
-            Report a Crime
-          </Button>
-          <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">
-            <Search className="w-5 h-5 mr-2" />
-            Report Missing Person
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-
-    {/* Posts Section */}
-    <Card>
-      <CardHeader>
-        <CardTitle>Posts</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Post Component - replace with your actual Post component */}
-        <div className="space-y-4">
-          <Post 
-            author={user.name}
-            avatar={profileImage}
-            content="This is a sample post content that would appear in the feed."
-            timestamp="2 hours ago"
-            likes={15}
-            comments={3}
-          />
-          <Post 
-            author={user.name}
-            avatar={profileImage}
-            content="Another post example showing how the feed would look with multiple posts."
-            timestamp="1 day ago"
-            likes={42}
-            comments={7}
-          />
-          <Post 
-            author={user.name}
-            avatar={profileImage}
-            content="Community safety is everyone's responsibility. Stay vigilant and report suspicious activities."
-            timestamp="3 days ago"
-            likes={28}
-            comments={5}
-          />
-          {/* Add more posts to test scrolling */}
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-</div>
       </div>
 
       {/* Followers Dialog */}
@@ -347,7 +322,7 @@ export default function Profile() {
           <DialogHeader>
             <DialogTitle>Followers</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 overflow-y-auto max-h-96">
+          <div className="space-y-3 overflow-y-auto max-h-96 scrollbar-hidden">
             {user.followingUsers.map((u) => (
               <div
                 key={u.id}
@@ -360,7 +335,11 @@ export default function Profile() {
                   </Avatar>
                   <p>{u.name}</p>
                 </div>
-                <Button size="sm" variant="destructive">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => dispatch(unfollow(u.id))}
+                >
                   Unfollow
                 </Button>
               </div>
@@ -368,12 +347,8 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
-          
-     <ReportWizard open={open} onOpenChange={setOpen}/>
-    
-    </div>
 
-    
-    
+      <ReportWizard open={open} onOpenChange={setOpen} />
+    </div>
   );
 }

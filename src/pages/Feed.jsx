@@ -1,5 +1,4 @@
 // pages/Feed.jsx
-import Navbar from "@/components/layout/FeedNav";
 import ProfileCard from "@/components/layout/ProfileCard";
 import RightSidebar from "@/components/layout/RightSidebar";
 import { Button } from "@/components/ui/button";
@@ -8,8 +7,7 @@ import PostCard from "@/components/layout/PostCard";
 export default function Feed() {
   return (
     <div className="flex flex-col h-screen">
-      {/* Navbar */}
-      <Navbar />
+    
 
       {/* Main Content */}
       <div className="flex flex-1 gap-6 px-6 py-4">
