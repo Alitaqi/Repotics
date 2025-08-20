@@ -12,6 +12,7 @@
        ├── ui/             # Shadcn, Radix, Tailwind-styled UI components
        ├── layout/         # Navbar, Footer, Sidebar, etc.
        └── custom/         # Your own custom reusable components
+      
    
    📂 features/            # Redux slices + related components
        ├── auth/           # Authentication-related state + components
