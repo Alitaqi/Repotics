@@ -66,43 +66,7 @@ git merge main
 
 
 ---------------------------------------------------------------------------
-
-Profile module:
-
-things that will be in this module are as follow
-
-1. each person will have unique profile that will work on basis on cookies
-2. the profile will have access control if the profile=user logged in we will allow them to add post directly from thier page and allow cahning of things 
-3. make a preson and give him access to government and then just go and put control so if a person is verified then just show extra report button staic for now
-3. profile data will be posts from backend so if we get ai setup the data of post will automatically become perfect but that means this feature will not be finished unless we get the ai api properly set up
-followes popup
-
-Settings:
-then i will mmke setting tab where user will be able to properly change its detaiils and mayeb btton for pushed like a toggle idk and for sms we wil take number and i dont think we need anyother things in settings for now
-
-post page: popup with comments and pagination too
-Now:
-
-feed
-notifaction section
-search page
-....reptoing page
-....missing person reprot page
-....missing eprson page
-
 ----------------------
-Future:
-dashboard see module in reqs and this AI Analytics and Suggestions for Law Enforcement Agencies too
-ladnign page
-Real-Time Alerts 
-heamap  see module in res Interactive Heatmap & Statistics 
-fast api ai lagani hai
-heatmap, real time alerts and dashbord all require us to have proper data 
-
-
-
-
-
 
 
 

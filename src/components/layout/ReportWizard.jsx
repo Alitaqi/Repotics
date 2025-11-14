@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { updateDraft, resetReport, hydrateFromStorage } from "@/lib/redux/slices/reportSlice";
 import ImageStep from "@/components/Reporting/ImageStep";
 import DetailsStep from "@/components/Reporting/DetailsStep";
+import { useCreateReportMutation } from "@/lib/redux/api/reportApi"; // adjust path
 
 const STORAGE_KEY = "reportDraft";
 
-export default function ReportWizard({ open, onOpenChange }) {
+export default function ReportWizard({ open, onOpenChange, onPostCreated }) {
   const dispatch = useDispatch();
   const draft = useSelector((s) => s.report.draft);
   const [step, setStep] = useState(1);
+  const [files, setFiles] = useState([]);
+   const [createReport, { isLoading }] = useCreateReportMutation();
 
   // Load draft from localStorage
   useEffect(() => {
@@ -40,7 +43,7 @@ export default function ReportWizard({ open, onOpenChange }) {
   }, [draft]);
 
   // Step validation
-  const canGoNext = useMemo(() => draft.images.length > 0 && draft.description?.trim(), [draft]);
+  const canGoNext = useMemo(() => draft.images.length > 0 && draft.incidentDescription?.trim(), [draft]);
   const canSubmit = useMemo(() => {
     if (!draft.crimeType) return false;
     if (!draft.date || !draft.time) return false;
@@ -51,13 +54,46 @@ export default function ReportWizard({ open, onOpenChange }) {
 
   const handleClose = (v) => onOpenChange?.(v);
 
-  const handleSubmit = () => {
-    console.log("FINAL REPORT PAYLOAD:", draft);
-    // TODO: dispatch API call here later
+  const handleSubmit = async () => {
+    try {
+      const formData = new FormData();
 
-    localStorage.removeItem(STORAGE_KEY);
-    dispatch(resetReport());
-    handleClose(false);
+      // structured fields
+      formData.append("incidentDescription", draft.incidentDescription || "");
+      formData.append("crimeType", draft.crimeType);
+      formData.append("date", draft.date);
+      formData.append("time", draft.time);
+      formData.append("locationText", draft.locationText);
+      if (draft.coordinates?.lat) formData.append("lat", draft.coordinates.lat);
+      if (draft.coordinates?.lng) formData.append("lng", draft.coordinates.lng);
+      formData.append("anonymous", draft.anonymous);
+      formData.append("agreed", draft.agreed);
+
+      // images
+      // draft.images.forEach((imgObj) => {
+      //   if (imgObj.file) {
+      //     formData.append("images", imgObj.file);
+      //   }
+      // });
+      files.forEach((f) => {
+        formData.append("images", f.file);
+      });
+
+
+      // 🔹 call API
+      await createReport(formData).unwrap();
+
+      // 🔹 Notify Profile.jsx to refresh posts
+      if (onPostCreated) onPostCreated();
+      
+      // cleanup
+      localStorage.removeItem(STORAGE_KEY);
+      dispatch(resetReport());
+      handleClose(false);
+    } catch (err) {
+      console.error("Failed to submit report:", err);
+      alert("Error submitting report. Please try again.");
+    }
   };
 
   return (
@@ -71,7 +107,7 @@ export default function ReportWizard({ open, onOpenChange }) {
 
         {/* Body */}
         <div className="px-6 pb-6">
-          {step === 1 && <ImageStep />}
+          {step === 1 && <ImageStep files={files} setFiles={setFiles} />}
           {step === 2 && <DetailsStep />}
         </div>
 
@@ -88,7 +124,9 @@ export default function ReportWizard({ open, onOpenChange }) {
           )}
 
           {step === 2 && (
-            <Button onClick={handleSubmit} disabled={!canSubmit}>Submit Report</Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit || isLoading}>
+              {isLoading ? "Submitting..." : "Submit Report"}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

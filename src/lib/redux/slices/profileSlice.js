@@ -1,78 +1,121 @@
-// src/lib/redux/slices/profileSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  user: {
-    name: "John Doe",
-    username: "johndoe",
-    verified: true,
-    location: "Gotham City",
-    birthdate: "Born March 30, 2000",
-    posts: 42,
-    followers: 123,
-    following: 87,
-    bio: "Vigilante by night. Billionaire by day.",
-    badges: ["Batman", "Vigilante", "Detective"],
-    followingUsers: [
-      { id: 1, name: "Bruce Wayne", avatar: "https://i.pravatar.cc/50?u=1" },
-      { id: 2, name: "Clark Kent", avatar: "https://i.pravatar.cc/50?u=2" },
-      { id: 3, name: "Diana Prince", avatar: "https://i.pravatar.cc/50?u=3" },
-      { id: 4, name: "Barry Allen", avatar: "https://i.pravatar.cc/50?u=4" },
-      { id: 5, name: "Arthur Curry", avatar: "https://i.pravatar.cc/50?u=5" },
-      { id: 6, name: "Hal Jordan", avatar: "https://i.pravatar.cc/50?u=6" },
-      { id: 7, name: "Oliver Queen", avatar: "https://i.pravatar.cc/50?u=7" },
-      { id: 8, name: "Selina Kyle", avatar: "https://i.pravatar.cc/50?u=8" },
-      { id: 9, name: "Harley Quinn", avatar: "https://i.pravatar.cc/50?u=9" },
-    ],
-  },
+  user: null, // will hold {name, username, email, bio, ...}
   images: {
-    bannerImage: "\\src\\assets\\images\\c6.png",
-    profileImage: "https://i.pravatar.cc/150?u=me",
+    bannerImage: null,
+    profileImage: null,
   },
+    isOwner: false,// idk gpt somewaht recomeneded this
 };
 
 const profileSlice = createSlice({
   name: "profile",
   initialState,
   reducers: {
+    setProfile(state, action) {
+      state.user = action.payload;
+
+      // sync images
+      state.images.profileImage = action.payload.profilePicture || null;
+      state.images.bannerImage = action.payload.bannerPicture || null;
+
+      state.isOwner = action.payload.isOwner || false;
+    },
     setBio(state, action) {
-      state.user.bio = action.payload;
+      if (state.user) state.user.bio = action.payload;
     },
     setBannerImage(state, action) {
       state.images.bannerImage = action.payload;
+      if (state.user) {
+        state.user.bannerPicture = action.payload;
+      }
     },
     setProfileImage(state, action) {
       state.images.profileImage = action.payload;
+      if (state.user) {
+        state.user.profilePicture = action.payload;
+      }
     },
-    // Optional: update counters, user fields, etc.
+    // Explicit replacement after Cloudinary deletion + new upload
+    replaceBannerImage(state, action) {
+      if (state.user) {
+        state.user.bannerPicture = action.payload;
+      }
+      state.images.bannerImage = action.payload;
+    },
+    replaceProfileImage(state, action) {
+      if (state.user) {
+        state.user.profilePicture = action.payload;
+      }
+      state.images.profileImage = action.payload;
+    },
     setUserField(state, action) {
       const { key, value } = action.payload;
-      if (key in state.user) state.user[key] = value;
+      if (state.user && key in state.user) {
+        state.user[key] = value;
+      }
     },
-    // Optional: unfollow/follow logic
     unfollow(state, action) {
+      if (!state.user) return;
       const id = action.payload;
-      state.user.followingUsers = state.user.followingUsers.filter(u => u.id !== id);
-      if (state.user.following > 0) state.user.following -= 1;
+      state.user.following = state.user.following.filter((u) => u._id !== id);
+      if (state.user.followingCount > 0) state.user.followingCount -= 1;
     },
     follow(state, action) {
-      const newUser = action.payload; // {id, name, avatar}
-      const exists = state.user.followingUsers.some(u => u.id === newUser.id);
+      if (!state.user) return;
+      const newUser = action.payload; // {_id, username, profilePicture}
+      const exists = state.user.following.some((u) => u._id === newUser._id);
       if (!exists) {
-        state.user.followingUsers.unshift(newUser);
-        state.user.following += 1;
+        state.user.following.unshift(newUser);
+        state.user.followingCount += 1;
+      }
+    },
+    // ADD THESE NEW ACTIONS:
+    setFollowStatus(state, action) {
+      if (state.user) {
+        state.user.isFollowing = action.payload;
+      }
+    },
+    incrementFollowerCount(state) {
+      if (state.user) {
+        state.user.followersCount += 1;
+      }
+    },
+
+    decrementFollowerCount(state) {
+      if (state.user && state.user.followersCount > 0) {
+        state.user.followersCount -= 1;
+      }
+    },
+    updateFollower(state, action) {
+      // For adding/removing specific follower objects if needed
+      const { follower, action: operation } = action.payload;
+      if (state.user && state.user.followers) {
+        if (operation === 'add') {
+          state.user.followers.push(follower);
+        } else if (operation === 'remove') {
+          state.user.followers = state.user.followers.filter(f => f._id !== follower._id);
+        }
       }
     },
   },
 });
 
 export const {
+  setProfile,
   setBio,
   setBannerImage,
   setProfileImage,
+  replaceBannerImage,   // ✅ new
+  replaceProfileImage,  // ✅ new
   setUserField,
   unfollow,
   follow,
+  setFollowStatus,
+  incrementFollowerCount,
+  decrementFollowerCount,
+  updateFollower,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

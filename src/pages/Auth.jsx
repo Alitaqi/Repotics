@@ -1,7 +1,8 @@
 // pages/Auth.jsx
 import React, { useState } from "react";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-// import sampleVideo from "@/assets/videos/v4.mp4";
+import { useNavigate } from "react-router-dom";
 import { useRegisterUserMutation, useLoginUserMutation } from "@/lib/redux/api/authApi.js";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/lib/redux/slices/authSlice.js";
@@ -43,12 +44,19 @@ export default function Auth() {
   const isOldEnough = (dob) => {
     if (!dob) return true;
     const birthDate = new Date(dob);
-    const ageDifMs = Date.now() - birthDate.getTime();
-    const ageDate = new Date(ageDifMs);
-    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+     const today = new Date();
+     
+     let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+
+  // if birthday hasn’t happened yet this year, subtract one
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  };
     return age >= 16;
   };
 
+  const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isOldEnough(form.dob)) {
@@ -57,19 +65,23 @@ export default function Auth() {
     }
 
     try {
+      let user;
       if (isLogin) {
-        const user = await loginUser({ credential: form.email, password: form.password }).unwrap();
+        user = await loginUser({ credential: form.email, password: form.password }).unwrap();
         dispatch(setUser(user));
       } else {
-        const user = await registerUser(form).unwrap();
-        dispatch(setUser(user));
+        user = await registerUser(form).unwrap();
       }
+      dispatch(setUser(user)); // save user in Redux
+      navigate("/feed");  // redirect after both login and signup
       alert("Success!");
     } catch (err) {
       console.error(err);
       alert(err.data?.message || "Something went wrong");
     }
   };
+
+  
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">

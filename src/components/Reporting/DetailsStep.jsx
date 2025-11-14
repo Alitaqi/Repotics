@@ -1,8 +1,13 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateDraft } from "@/lib/redux/slices/reportSlice";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2, MapPin, AlertCircle } from "lucide-react";
+import { debounce } from "lodash";
+import {
+  useLazySearchLocationsQuery,
+  useLazyReverseGeocodeQuery,
+} from "@/lib/redux/api/reportApi";
 
 function Toggle({ checked, onChange }) {
   return (
@@ -23,16 +28,35 @@ function Toggle({ checked, onChange }) {
 }
 
 export default function DetailsStep() {
+  const [triggerSearchLocations] = useLazySearchLocationsQuery();
+const [triggerReverseGeocode] = useLazyReverseGeocodeQuery();
   const dispatch = useDispatch();
   const draft = useSelector((s) => s.report.draft);
 
   // --- Crime dropdown ---
-  const crimeTypes = [
-    "Theft", "Murder", "Harassment", "Fraud", "Cybercrime",
-    "Kidnapping", "Drugs", "Vandalism", "Assault", "Domestic Violence",
-    "Robbery", "Bribery", "Extortion", "Stalking", "Human Trafficking",
-    "Illegal Weapons", "Arson", "Other"
-  ];
+  const crimeTypes = useMemo(
+    () => [
+      "Theft",
+      "Murder",
+      "Harassment",
+      "Fraud",
+      "Cybercrime",
+      "Kidnapping",
+      "Drugs",
+      "Vandalism",
+      "Assault",
+      "Domestic Violence",
+      "Robbery",
+      "Bribery",
+      "Extortion",
+      "Stalking",
+      "Human Trafficking",
+      "Illegal Weapons",
+      "Arson",
+      "Other",
+    ],
+    []
+  );
 
   const [crimeOpen, setCrimeOpen] = useState(false);
   const [crimeSearch, setCrimeSearch] = useState("");
@@ -41,71 +65,159 @@ export default function DetailsStep() {
     return crimeTypes.filter((c) =>
       c.toLowerCase().includes(crimeSearch.toLowerCase())
     );
-  }, [crimeSearch]);
+  }, [crimeSearch, crimeTypes]);
 
   // --- Location dropdown (API) ---
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!locationSearch) {
-      setSuggestions([]);
-      return;
-    }
+// Location search (debounced)
 
-    const fetchLocations = async () => {
+const fetchLocations = useMemo(
+  () =>
+    debounce(async (search) => {
+      if (!search.trim()) {
+        setSuggestions([]);
+        setError(null);
+        return;
+      }
+      setIsLoading(true);
+      setError(null);
+
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search? +
-            q${encodeURIComponent(locationSearch + " Pakistan")}&format=json&limit=5`,
-          {
-            headers: {
-              "Accept": "application/json",
-              "User-Agent": "reportics/1.0 (contact: ali@gmail.com)" // replace with your email
-            }
-          }
-        );
-        const data = await res.json();
+        const data = await triggerSearchLocations(search).unwrap();
         setSuggestions(data);
       } catch (err) {
         console.error("Location search error:", err);
+        setError("Failed to fetch locations. Please try again.");
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
       }
-    };
+    }, 500),
+  [triggerSearchLocations]
+);
 
-    const debounce = setTimeout(fetchLocations, 400);
-    return () => clearTimeout(debounce);
-  }, [locationSearch]);
+const useMyLocation = () => {
+  if (!navigator.geolocation) {
+    setError("Geolocation is not supported by your browser");
+    return;
+  }
+
+  setIsLoading(true);
+  setError(null);
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      try {
+        const data = await triggerReverseGeocode({ lat: latitude, lon: longitude }).unwrap();
+
+        dispatch(
+          updateDraft({
+            locationText: data.display_name,
+            coordinates: { lat: latitude, lng: longitude },
+          })
+        );
+        setLocationSearch(data.display_name);
+        setError(null);
+      } catch (err) {
+        console.error("Reverse geocode failed:", err);
+        setError("Failed to fetch location information. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    (err) => {
+      console.error("Location error:", err);
+      setError(
+        err.code === err.PERMISSION_DENIED
+          ? "Location access denied. Please enable location permissions in your browser."
+          : "Location unavailable. Please try again."
+      );
+      setIsLoading(false);
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+};
+
+
+  const handleLocationChange = (e) => {
+    setLocationSearch(e.target.value);
+    if (e.target.value.length > 2) {
+      fetchLocations(e.target.value);
+    } else {
+      setSuggestions([]);
+      setError(null);
+    }
+  };
+
+  const handleLocationSelect = (location) => {
+    dispatch(
+      updateDraft({
+        locationText: location.display_name,
+        coordinates: { lat: location.lat, lng: location.lon },
+      })
+    );
+    setLocationSearch(location.display_name);
+    setSuggestions([]);
+    setLocationOpen(false);
+    setError(null);
+  };
+
+  // // ✅ Cancel debounce on unmount
+  useEffect(() => {
+    return () => fetchLocations.cancel();
+  }, [fetchLocations]);
 
   // --- Reverse geocode for "Use My Location" ---
-  const useMyLocation = () => {
-    if (!navigator.geolocation) return alert("Geolocation not supported");
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            {
-              headers: { "User-Agent": "reportics/1.0 (contact: ali@gmail.com)" }
-            }
-          );
-          const data = await res.json();
-          dispatch(
-            updateDraft({
-              locationText: data.display_name,
-              coordinates: { lat: latitude, lng: longitude },
-            })
-          );
-          setLocationSearch(data.display_name);
-        } catch (err) {
-          console.error("Reverse geocode failed:", err);
-        }
-      },
-      (err) => alert("Location error: " + err.message),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  };
+  // const useMyLocation = () => {
+  //   if (!navigator.geolocation) {
+  //     setError("Geolocation is not supported by your browser");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   setError(null);
+
+  //   navigator.geolocation.getCurrentPosition(
+  //     async (pos) => {
+  //       const { latitude, longitude } = pos.coords;
+  //       try {
+  //         const data = await fetchWithRetry(
+  //           `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+  //         );
+
+  //         dispatch(
+  //           updateDraft({
+  //             locationText: data.display_name,
+  //             coordinates: { lat: latitude, lng: longitude },
+  //           })
+  //         );
+  //         setLocationSearch(data.display_name);
+  //         setError(null);
+  //       } catch (err) {
+  //         console.error("Reverse geocode failed:", err);
+  //         setError("Failed to fetch location information. Please try again.");
+  //       } finally {
+  //         setIsLoading(false);
+  //       }
+  //     },
+  //     (err) => {
+  //       console.error("Location error:", err);
+  //       setError(
+  //         err.code === err.PERMISSION_DENIED
+  //           ? "Location access denied. Please enable location permissions in your browser."
+  //           : "Location unavailable. Please try again."
+  //       );
+  //       setIsLoading(false);
+  //     },
+  //     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  //   );
+  // };
 
   // --- Click outside & Escape to close dropdowns ---
   const wrapperRef = useRef(null);
@@ -147,7 +259,7 @@ export default function DetailsStep() {
           <input
             type="text"
             placeholder="Search or select crime..."
-            value={crimeSearch || draft.crimeType}
+            value={crimeSearch || draft.crimeType || ""}
             onChange={(e) => {
               setCrimeSearch(e.target.value);
               setCrimeOpen(true);
@@ -188,13 +300,13 @@ export default function DetailsStep() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <input
           type="date"
-          value={draft.date}
+          value={draft.date || ""}
           onChange={(e) => dispatch(updateDraft({ date: e.target.value }))}
           className="border rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-[#1B4FCE] focus:outline-none"
         />
         <input
           type="time"
-          value={draft.time}
+          value={draft.time || ""}
           onChange={(e) => dispatch(updateDraft({ time: e.target.value }))}
           className="border rounded-lg p-2 shadow-sm focus:ring-2 focus:ring-[#1B4FCE] focus:outline-none"
         />
@@ -209,11 +321,8 @@ export default function DetailsStep() {
           <input
             type="text"
             placeholder="Search location..."
-            value={locationSearch || draft.locationText}
-            onChange={(e) => {
-              setLocationSearch(e.target.value);
-              setLocationOpen(true);
-            }}
+            value={locationSearch || draft.locationText || ""}
+            onChange={handleLocationChange}
             onFocus={() => setLocationOpen(true)}
             className="w-full border rounded-lg p-2 pr-8 focus:ring-2 focus:ring-[#1B4FCE] focus:outline-none"
           />
@@ -222,6 +331,21 @@ export default function DetailsStep() {
             className="absolute w-4 h-4 text-gray-500 -translate-y-1/2 cursor-pointer right-2 top-1/2"
           />
         </div>
+        
+        {isLoading && (
+          <div className="absolute flex items-center mt-1 text-sm text-gray-500">
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            Searching...
+          </div>
+        )}
+        
+        {error && (
+          <div className="flex items-center mt-1 text-sm text-red-600">
+            <AlertCircle className="w-4 h-4 mr-1" />
+            {error}
+          </div>
+        )}
+        
         {locationOpen && suggestions.length > 0 && (
           <div className="absolute z-10 w-full mt-1 overflow-y-auto bg-white border rounded-lg shadow-md max-h-40">
             {suggestions.map((s, i) => (
@@ -230,26 +354,24 @@ export default function DetailsStep() {
                 className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${
                   draft.locationText === s.display_name ? "bg-blue-100 font-medium" : ""
                 }`}
-                onClick={() => {
-                  dispatch(
-                    updateDraft({
-                      locationText: s.display_name,
-                      coordinates: { lat: s.lat, lng: s.lon },
-                    })
-                  );
-                  setLocationSearch(s.display_name);
-                  setLocationOpen(false);
-                }}
+                onClick={() => handleLocationSelect(s)}
               >
                 {s.display_name}
               </div>
             ))}
           </div>
         )}
+        
         <Button
           onClick={useMyLocation}
-          className="mt-2 bg-black hover:bg-[#163da0] text-white"
+          disabled={isLoading}
+          className="mt-2 text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <MapPin className="w-4 h-4 mr-2" />
+          )}
           Use my location
         </Button>
       </div>
@@ -258,7 +380,7 @@ export default function DetailsStep() {
       <div className="flex items-center justify-between p-3 border rounded-lg shadow-sm">
         <span>Post as Anonymous</span>
         <Toggle
-          checked={draft.anonymous}
+          checked={draft.anonymous || false}
           onChange={(v) => dispatch(updateDraft({ anonymous: v }))}
         />
       </div>
@@ -267,7 +389,7 @@ export default function DetailsStep() {
       <label className="flex items-start gap-2 text-sm">
         <input
           type="checkbox"
-          checked={draft.agreed}
+          checked={draft.agreed || false}
           onChange={(e) => dispatch(updateDraft({ agreed: e.target.checked }))}
           className="mt-0.5"
         />

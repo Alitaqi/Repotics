@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { updateDraft } from "@/lib/redux/slices/reportSlice";
+import { safeUpdateDraft, updateDraft} from "@/lib/redux/slices/reportSlice";
 import { Upload, X, ChevronLeft, ChevronRight, Pencil, Plus } from "lucide-react";
 import Cropper from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -37,7 +37,8 @@ const getCroppedImg = async (imageSrc, _crop, _zoom, _aspect, croppedAreaPixels)
   });
 };
 
-export default function ImageStep() {
+// eslint-disable-next-line no-unused-vars
+export default function ImageStep({ files, setFiles }) {
   const dispatch = useDispatch();
   const draft = useSelector((s) => s.report.draft);
   const images = draft.images || [];
@@ -58,11 +59,12 @@ export default function ImageStep() {
     const originalsArr = arr.map((f) => ({
       url: URL.createObjectURL(f),
       name: f.name,
-      file: f,
     }));
+    // keep files locally for FormData later
+    setFiles(prev => [...prev, ...arr.map(f => ({ name: f.name, file: f }))]);
     // show originals by default
     dispatch(
-      updateDraft({
+      safeUpdateDraft({
         originalImages: [...originals, ...originalsArr],
         images: [...images, ...originalsArr],
       })
@@ -81,7 +83,7 @@ export default function ImageStep() {
 
     const next = [...images];
     next[current] = { ...next[current], url: croppedUrl };
-    dispatch(updateDraft({ images: next })); // originals kept for re-cropping
+   dispatch(safeUpdateDraft({ images: next })); // originals kept for re-cropping
 
     setCropDialogOpen(false);
   };
@@ -91,20 +93,27 @@ export default function ImageStep() {
     if (!original) return;
     const next = [...images];
     next[current] = { ...original };
-    dispatch(updateDraft({ images: next }));
+     dispatch(safeUpdateDraft({ images: next }));
     setCropDialogOpen(false);
   };
 
   const removeCurrent = () => {
     const nextImages = images.filter((_, i) => i !== current);
     const nextOriginals = originals.filter((_, i) => i !== current);
-    dispatch(updateDraft({ images: nextImages, originalImages: nextOriginals }));
+    dispatch(safeUpdateDraft({ images: nextImages, originalImages: nextOriginals }));
     if (nextImages.length === 0) {
       setCurrent(0);
       return;
     }
     setCurrent((idx) => Math.min(idx, nextImages.length - 1));
   };
+
+  useEffect(() => {
+  return () => {
+    images.forEach(img => URL.revokeObjectURL(img.url));
+  };
+}, [images]);
+
 
   return (
     <div className="relative space-y-4">
@@ -202,8 +211,8 @@ export default function ImageStep() {
         <textarea
           rows={3}
           placeholder="Describe what happened…"
-          value={draft.description}
-          onChange={(e) => dispatch(updateDraft({ description: e.target.value }))}
+          value={draft.incidentDescription}
+          onChange={(e) => dispatch(updateDraft({ incidentDescription: e.target.value }))}
           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-400"
         />
       </div>

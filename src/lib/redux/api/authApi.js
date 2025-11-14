@@ -7,7 +7,7 @@ const baseUrl = `${import.meta.env.VITE_API_BASE_URL}/api/users`;
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl, // replace with your backend URL
+    baseUrl,
     prepareHeaders: (headers) => {
       headers.set("Content-Type", "application/json");
       return headers;
@@ -26,10 +26,20 @@ export const authApi = createApi({
       query: (credentials) => ({
         url: "/login",
         method: "POST",
-        body: credentials,
+        body: credentials, 
       }),
+    }),
+    logoutUser: builder.mutation({
+      query: () => ({
+        url: "/logout",
+        method: "POST",
+        credentials: "include", // needed to clear cookie
+      }),
+    }),
+    getMe: builder.query({
+      query: () => "/me", // calls your backend /me endpoint
     }),
   }),
 });
 
-export const { useRegisterUserMutation, useLoginUserMutation } = authApi;
+export const { useRegisterUserMutation, useLoginUserMutation, useGetMeQuery, useLogoutUserMutation } = authApi;
