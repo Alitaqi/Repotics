@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   MoreHorizontal, CheckCircle2, MessageCircle, Share, Flag,
-  ChevronUp, ChevronDown, Edit, Trash2, Loader2
+  ChevronUp, ChevronDown, Edit, Trash2, Loader2,
+  ChevronLeft, ChevronRight, X
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,6 +17,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+// Import Swiper components and styles
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Zoom, Keyboard } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/zoom';
+
 import EditPostDialog from "./EditPostDialog";
 import DeletePostDialog from "./DeletePostDialog";
 import PostComment from "./PostComment";
@@ -33,10 +45,20 @@ import {
 } from "@/lib/redux/api/profileApi";
 import { useNavigate } from "react-router-dom";
 
+// Add this import if you don't have it
+import PostModal from "./PostModal";
 
 export default function PostCard({ post, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
   const isOwner = currentUser && post.user?._id === currentUser._id;
+
+  // Add state for modal
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  // Add state for fullscreen image viewer
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Follow logic
   const { data: followStatusData } = useCheckFollowStatusQuery(
@@ -68,6 +90,29 @@ export default function PostCard({ post, refetchPosts }) {
       await unfollowUser(post.user.username).unwrap();
       if (refetchPosts) refetchPosts();
     } catch (err) { console.error("Unfollow failed:", err); }
+  };
+
+  // Keep original image click handler for PostModal
+  const handleImageClick = () => {
+    setSelectedPostId(post._id);
+    setSelectedPost(post);
+  };
+
+  // New handler for slider image click (opens fullscreen viewer)
+  const handleSliderImageClick = (index = 0) => {
+    setCurrentImageIndex(index);
+    setIsImageViewerOpen(true);
+  };
+
+  // Add modal close handler
+  const handleClosePost = () => {
+    setSelectedPostId(null);
+    setSelectedPost(null);
+  };
+
+  // Close image viewer
+  const handleCloseImageViewer = () => {
+    setIsImageViewerOpen(false);
   };
 
   // Voting
@@ -233,17 +278,40 @@ export default function PostCard({ post, refetchPosts }) {
             ))}
           </div>
 
-          {/* Images */}
+          {/* Images - Updated with Swiper slider */}
           {post.images?.length > 0 && (
-            <div className="grid grid-cols-1 gap-2 mt-3">
-              {post.images.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  alt="post image"
-                  className="object-cover w-full h-64 rounded-lg"
-                />
-              ))}
+            <div className="mt-3">
+              <Swiper
+                modules={[Navigation, Pagination]}
+                spaceBetween={10}
+                slidesPerView={1}
+                navigation={post.images.length > 1}
+                pagination={{ 
+                  clickable: true,
+                  dynamicBullets: true 
+                }}
+                className="rounded-lg post-image-swiper"
+              >
+                {post.images.map((img, index) => (
+                  <SwiperSlide key={index}>
+                    <div 
+                      className="relative w-full overflow-hidden bg-gray-100 rounded-lg cursor-pointer "
+                      onClick={handleImageClick} // Keep original click functionality
+                    >
+                      <img
+                        src={img}
+                        alt={`Post image ${index + 1}`}
+                        className="object-contain w-full h-full transition-transform duration-300 rounded-lg hover:scale-105"
+                      />
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+              {post.images.length > 1 && (
+                <div className="mt-2 text-xs text-center text-gray-500">
+                  Slide to view more images
+                </div>
+              )}
             </div>
           )}
 
@@ -360,6 +428,93 @@ export default function PostCard({ post, refetchPosts }) {
         onDelete={handleDelete}
         isLoading={isDeleting}
       />
+
+      {/* Add PostModal */}
+      <PostModal
+        selectedPostId={selectedPostId}
+        handleClosePost={handleClosePost}
+        post={selectedPost}
+        refetchPosts={refetchPosts}
+      />
+
+      {/* Fullscreen Image Viewer */}
+      {isImageViewerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90">
+          <div className="relative w-full h-full max-w-6xl max-h-screen">
+            {/* Close button */}
+            <button
+              onClick={handleCloseImageViewer}
+              className="absolute z-10 p-2 text-white transition-all bg-black bg-opacity-50 rounded-full top-4 right-4 hover:bg-opacity-70"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Swiper for fullscreen images */}
+            <Swiper
+              modules={[Navigation, Pagination, Zoom, Keyboard]}
+              spaceBetween={50}
+              slidesPerView={1}
+              navigation={{
+                nextEl: '.swiper-button-next-custom',
+                prevEl: '.swiper-button-prev-custom',
+              }}
+              pagination={{ 
+                clickable: true,
+                type: 'fraction'
+              }}
+              zoom={true}
+              keyboard={{ enabled: true }}
+              initialSlide={currentImageIndex}
+              className="w-full h-full"
+            >
+              {post.images.map((img, index) => (
+                <SwiperSlide key={index}>
+                  <div className="swiper-zoom-container">
+                    <img
+                      src={img}
+                      alt={`Post image ${index + 1}`}
+                      className="object-contain w-full h-full transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            {/* Custom navigation buttons - Smaller */}
+            <button className="absolute z-10 p-1 text-white transition-all transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full swiper-button-prev-custom left-2 top-1/2 hover:bg-opacity-70">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="absolute z-10 p-1 text-white transition-all transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full swiper-button-next-custom right-2 top-1/2 hover:bg-opacity-70">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Custom styles for smaller arrows in the main swiper */}
+      <style jsx>{`
+        .post-image-swiper .swiper-button-prev,
+        .post-image-swiper .swiper-button-next {
+          width: 30px;
+          height: 30px;
+          background: rgba(0, 0, 0, 0.5);
+          border-radius: 50%;
+          padding: 5px;
+          color: white;
+        }
+        .post-image-swiper .swiper-button-prev:after,
+        .post-image-swiper .swiper-button-next:after {
+          font-size: 12px;
+          font-weight: bold;
+        }
+        .post-image-swiper .swiper-pagination-bullet {
+          width: 6px;
+          height: 6px;
+        }
+        .post-image-swiper .swiper-pagination-bullet-active {
+          background: white;
+        }
+      `}</style>
     </>
   );
 }

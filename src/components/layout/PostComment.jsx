@@ -20,23 +20,36 @@ import {
   useDeleteReplyMutation
 } from "@/lib/redux/api/reportApi";
 
+// Helper function to safely get user data
+const getUserData = (user) => {
+  if (!user) return { name: "Unknown User", profilePicture: null, verified: false };
+  
+  return {
+    name: user.name || user.username || "Unknown User",
+    profilePicture: user.profilePicture,
+    verified: user.verified || false,
+    id: user._id || user.id || user.$oid
+  };
+};
+
+// Helper function to check if user is owner
+const isUserOwner = (user, currentUser) => {
+  if (!user || !currentUser) return false;
+  
+  const userId = user._id || user.id || user.$oid;
+  const currentUserId = currentUser._id || currentUser.id;
+  
+  return userId === currentUserId;
+};
+
 // Reply component
 function ReplyComment({ reply, postId, commentId, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
   const [voteReply] = useVoteReplyMutation();
   const [deleteReply] = useDeleteReplyMutation();
-  console.log("Logged-in userdsad:", currentUser);
-  // Add safety checks for reply.user
   
-  // const isReplyOwner = currentUser && reply.user && reply.user.id === currentUser.id;
-  const isReplyOwner =
-  currentUser &&
-  reply.user &&
-  (
-    reply.user?._id === currentUser._id || 
-    reply.user?.id === currentUser._id || 
-    reply.user?.$oid === currentUser._id
-  );
+  const replyUser = getUserData(reply.user);
+  const isReplyOwner = isUserOwner(reply.user, currentUser);
   const netVotes = (reply.upvotes?.length || 0) - (reply.downvotes?.length || 0);
 
   const handleVote = async (type) => {
@@ -65,14 +78,14 @@ function ReplyComment({ reply, postId, commentId, refetchPosts }) {
   return (
     <div className="flex gap-2">
       <Avatar className="flex-shrink-0 w-6 h-6">
-        <AvatarImage src={reply.user?.profilePicture} />
-        <AvatarFallback className="text-xs">{reply.user?.name?.[0] || "U"}</AvatarFallback>
+        <AvatarImage src={replyUser.profilePicture} />
+        <AvatarFallback className="text-xs">{replyUser.name[0]}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-medium">{reply.user?.name || "Unknown User"}</span>
-          {reply.user?.verified && <Badge variant="secondary" className="h-3 text-xs">✓</Badge>}
+          <span className="text-xs font-medium">{replyUser.name}</span>
+          {replyUser.verified && <Badge variant="secondary" className="h-3 text-xs">✓</Badge>}
           <span className="text-xs text-gray-500">
             {new Date(reply.createdAt).toLocaleDateString()}
           </span>
@@ -124,7 +137,7 @@ function ReplyComment({ reply, postId, commentId, refetchPosts }) {
 }
 
 // Main Comment component
-export default function Comment({ comment, postId, refetchPosts }) {
+export default function Comment({ comment, postId, refetchPosts, postOwnerId }) {
   const currentUser = useSelector((state) => state.auth.user);
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -133,17 +146,9 @@ export default function Comment({ comment, postId, refetchPosts }) {
   const [addReply] = useAddReplyMutation();
   const [deleteComment] = useDeleteCommentMutation();
 
-  // Add safety checks for comment.user
- 
-  // const isCommentOwner = currentUser && comment.user && comment.user.id === currentUser.id;
-  const isCommentOwner =
-    currentUser &&
-    comment.user &&
-    (
-      comment.user?._id === currentUser._id || 
-      comment.user?.id === currentUser._id || 
-      comment.user?.$oid === currentUser._id
-    );
+  const commentUser = getUserData(comment.user);
+  const isCommentOwner = isUserOwner(comment.user, currentUser);
+  const isPostOwner = postOwnerId && isUserOwner(comment.user, { _id: postOwnerId });
   const netVotes = (comment.upvotes?.length || 0) - (comment.downvotes?.length || 0);
 
   const handleVote = async (type) => {
@@ -185,15 +190,16 @@ export default function Comment({ comment, postId, refetchPosts }) {
   return (
     <div className="flex gap-3">
       <Avatar className="flex-shrink-0 w-8 h-8">
-        <AvatarImage src={comment.user?.profilePicture} />
-        <AvatarFallback>{comment.user?.name?.[0] || "U"}</AvatarFallback>
+        <AvatarImage src={commentUser.profilePicture} />
+        <AvatarFallback>{commentUser.name[0]}</AvatarFallback>
       </Avatar>
       
       <div className="flex-1">
-        <div className="flex items-center justify-between mb-1"> {/* Changed to justify-between */}
-          <div className="flex items-center gap-2"> {/* Wrapped user info in a div */}
-            <span className="text-sm font-medium">{comment.user?.name || "Unknown User"}</span>
-            {comment.user?.verified && <Badge variant="secondary" className="h-4 text-xs">Verified</Badge>}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{commentUser.name}</span>
+            {commentUser.verified && <Badge variant="secondary" className="h-4 text-xs">Verified</Badge>}
+            {isPostOwner && <Badge variant="outline" className="h-4 text-xs">OP</Badge>}
             <span className="text-xs text-gray-500">
               {new Date(comment.createdAt).toLocaleDateString()}
             </span>

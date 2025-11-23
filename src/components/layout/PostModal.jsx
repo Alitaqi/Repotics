@@ -1,5 +1,5 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -19,29 +19,104 @@ import {
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
+// Helper function to process comments and replies with proper user data
+const processCommentsWithUserData = (comments, postUser) => {
+  if (!comments || !Array.isArray(comments)) return [];
+  
+  return comments.map(comment => {
+    // If comment.user is a string (user ID), convert it to user object structure
+    let processedComment = { ...comment };
+    
+    if (typeof comment.user === 'string') {
+      processedComment.user = {
+        _id: comment.user,
+        name: "Unknown User",
+        profilePicture: "/default-avatar.png",
+        verified: false
+      };
+    }
+    
+    // Process replies
+    if (comment.replies && Array.isArray(comment.replies)) {
+      processedComment.replies = comment.replies.map(reply => {
+        let processedReply = { ...reply };
+        
+        if (typeof reply.user === 'string') {
+          processedReply.user = {
+            _id: reply.user,
+            name: "Unknown User", 
+            profilePicture: "/default-avatar.png",
+            verified: false
+          };
+        }
+        
+        return processedReply;
+      });
+    }
+    
+    return processedComment;
+  });
+};
+
 export default function PostModal({ selectedPostId, handleClosePost, post, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [comments, setComments] = useState([]);
   const [addComment, { isLoading: isAdding }] = useAddCommentMutation();
   const [upvotePost, { isLoading: isUpvoting }] = useUpvotePostMutation();
   const [downvotePost, { isLoading: isDownvoting }] = useDownvotePostMutation();
   const [userVote, setUserVote] = useState(post?.userVote || null);
-
   const navigate = useNavigate();
+
+  // Initialize comments when post changes
+  useEffect(() => {
+    if (post?.comments) {
+      console.log("PostModal comments before processing:", post.comments);
+      const processedComments = processCommentsWithUserData(post.comments, post.user);
+      console.log("PostModal comments after processing:", processedComments);
+      setComments(processedComments);
+    }
+  }, [post]);
+
   if (!post) return null;
 
   const netVotes = (post.upvotes?.length || 0) - (post.downvotes?.length || 0);
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !currentUser) return;
+  
+    // Create optimistic comment with full user object
+    const tempComment = {
+      _id: `temp-${Date.now()}`,
+      text: newComment,
+      user: {
+        _id: currentUser._id,
+        name: currentUser.name,
+        profilePicture: currentUser.profilePicture,
+        verified: currentUser.verified,
+        username: currentUser.username,
+      },
+      upvotes: [],
+      downvotes: [],
+      replies: [],
+      createdAt: new Date().toISOString(),
+      userVote: null,
+    };
+
+    // Add optimistic comment
+    setComments(prev => [...prev, tempComment]);
+    setNewComment("");
+
     try {
       await addComment({ postId: post._id, text: newComment }).unwrap();
-      setNewComment("");
+      // Refetch to get the actual comment with proper ID
       if (refetchPosts) refetchPosts();
     } catch (err) {
       console.error("Add comment failed:", err);
+      // Remove optimistic comment on error
+      setComments(prev => prev.filter(comment => comment._id !== tempComment._id));
     }
   };
 
@@ -77,7 +152,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
 
   return (
     <Dialog open={!!selectedPostId} onOpenChange={handleClosePost}>
-      <DialogContent className="p-0 overflow-hidden sm:max-w-5xl md:max-h-[90vh] h-[90vh] flex flex-col md:flex-row rounded-2xl">
+      <DialogContent className="p-0 overflow-hidden sm:max-w-5xl md:max-h-[90vh] h-[90vh] flex flex-col md:flex-row rounded-2xl border-none">
         {/* LEFT: Image Slider */}
         <div className="relative flex items-center justify-center w-full bg-black md:w-1/2">
           {post.images?.length > 0 ? (
@@ -110,7 +185,6 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
             </div>
           )}
         </div>
-
         {/* RIGHT: Post Details */}
         <div className="flex flex-col justify-between flex-1 p-4 overflow-y-auto bg-white">
           {/* Header */}
@@ -123,7 +197,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                 <AvatarImage
                   src={post.user?.profilePicture || "/default-avatar.png"}
                 />
-                <AvatarFallback>{post.user?.name?.[0]}</AvatarFallback>
+                <AvatarFallback>{post.user?.name?.[0] || "U"}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
@@ -142,12 +216,10 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
               </div>
             </div>
           </div>
-
           {/* Description */}
           <div className="py-3 text-sm whitespace-pre-line">
             {post.description}
           </div>
-
           {/* Hashtags */}
           {post.hashtags?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
@@ -158,7 +230,6 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
               ))}
             </div>
           )}
-
           {/* Votes */}
           <div className="flex items-center justify-around py-2 border-y">
             <Button
@@ -193,13 +264,18 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
               Downvote
             </Button>
           </div>
-
+          {/* Comments Count */}
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-sm text-gray-500">
+              {comments.length} comments
+            </span>
+          </div>
           {/* Comments */}
-          <div className="flex-1 mt-4 overflow-y-auto">
+          <div className="flex-1 mt-2 overflow-y-auto">
             {showComments && (
               <div className="space-y-4">
-                {post.comments && post.comments.length > 0 ? (
-                  post.comments.map((comment) => (
+                {comments.length > 0 ? (
+                  comments.map((comment) => (
                     <PostComment
                       key={comment._id}
                       comment={comment}
@@ -209,14 +285,13 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-center text-gray-500">
+                  <p className="py-4 text-sm text-center text-gray-500">
                     No comments yet. Be the first to comment!
                   </p>
                 )}
               </div>
             )}
           </div>
-
           {/* Add Comment */}
           <div className="pt-3 mt-4 border-t">
             <div className="flex gap-3">
@@ -232,6 +307,11 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   className="min-h-[70px]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      handleAddComment();
+                    }
+                  }}
                 />
                 <div className="flex justify-end gap-2 mt-2">
                   <Button
@@ -244,7 +324,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                   <Button
                     size="sm"
                     onClick={handleAddComment}
-                    disabled={!newComment.trim() || isAdding}
+                    disabled={!newComment.trim() || isAdding || !currentUser}
                   >
                     {isAdding ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -253,6 +333,11 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                     )}
                   </Button>
                 </div>
+                {!currentUser && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Please log in to comment
+                  </p>
+                )}
               </div>
             </div>
           </div>

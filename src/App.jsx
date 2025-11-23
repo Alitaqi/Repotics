@@ -13,6 +13,7 @@ import { useGetMeQuery } from "@/lib/redux/api/authApi";
 import { useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { setUser, logout } from "@/lib/redux/slices/authSlice";
+import { Navigate } from "react-router-dom";
 
 function App() {
   const location = useLocation();
@@ -76,7 +77,7 @@ function App() {
       {shouldShowNavbar && <FeedNav />}
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/feed" replace />} />
         <Route path="/auth" element={<Auth />} />
 
         <Route
