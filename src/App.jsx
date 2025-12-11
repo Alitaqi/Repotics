@@ -7,7 +7,8 @@ import Profile from "./pages/Profile";
 import FeedNav from "./components/layout/FeedNav";
 import Setting from "./pages/Setting";
 import Heatmap from "./pages/Heatmap";
-// import MissingPersons from "./pages/MissingPersons";
+import MissingPersons from "./pages/MissingPersons";
+import MissingPersonView from "./pages/MissingPersonView";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useGetMeQuery } from "@/lib/redux/api/authApi";
 import { useDispatch } from "react-redux";
@@ -63,7 +64,7 @@ function App() {
     }
   }, [data, isLoading, dispatch]);
 
-  const showNavbarRoutes = ["/feed", "/profile/:username", "/settings", "/heatmap", "/missing-persons"];
+  const showNavbarRoutes = ["/feed", "/profile/:username", "/settings", "/heatmap", "/missing-persons", "/missingperson/:id"];
   const shouldShowNavbar = showNavbarRoutes.some((route) =>
     matchPath({ path: route, end: false }, location.pathname)
   );
@@ -115,14 +116,23 @@ function App() {
           }
         />
 
-        {/* <Route
+        <Route
           path="/missing-persons"
           element={
             <ProtectedRoute>
               <MissingPersons />
             </ProtectedRoute>
           }
-        /> */}
+        />
+
+        <Route
+          path="/missingperson/:id"
+          element={
+            <ProtectedRoute>
+              <MissingPersonView/>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
   );

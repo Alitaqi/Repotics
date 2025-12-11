@@ -9,6 +9,7 @@ export const reportApi = createApi({
     baseUrl,
     credentials: "include", // send cookies
   }),
+  tagTypes: ['Posts', 'Post'], // Add this!
   endpoints: (builder) => ({
     createReport: builder.mutation({
       query: (formData) => ({
@@ -16,7 +17,9 @@ export const reportApi = createApi({
         method: "POST",
         body: formData, // must be FormData
       }),
+      invalidatesTags: [{ type: 'Posts', id: 'LIST' }],
     }),
+    
     // New: location search
     searchLocations: builder.query({
       query: (search) => `/location/search?q=${encodeURIComponent(search)}`,
@@ -29,15 +32,25 @@ export const reportApi = createApi({
 
     getUserPosts: builder.query({
       query: (username) => `/posts/user/${username}`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ _id }) => ({ type: 'Post', id: _id })),
+              { type: 'Posts', id: 'LIST' },
+            ]
+          : [{ type: 'Posts', id: 'LIST' }],
     }),
-     // New endpoints for post operations
+    
+    // New endpoints for post operations
     updatePost: builder.mutation({
       query: ({ postId, description }) => ({
         url: `/posts/${postId}`,
         method: "PUT",
         body: { description },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
 
     deletePost: builder.mutation({
@@ -45,7 +58,10 @@ export const reportApi = createApi({
         url: `/posts/${postId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, postId) => [
+        { type: 'Post', id: postId },
+        { type: 'Posts', id: 'LIST' },
+      ],
     }),
 
     upvotePost: builder.mutation({
@@ -53,11 +69,21 @@ export const reportApi = createApi({
         url: `/posts/${postId}/upvote`,
         method: "POST",
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, postId) => [
+        { type: 'Post', id: postId },
+      ],
+      // Optional: optimistic update for instant feedback
+      async onQueryStarted(postId, { dispatch, queryFulfilled }) {
+        // You can add optimistic updates here if needed
+        try {
+          await queryFulfilled;
+        } catch {}
+      },
     }),
 
     getPostById: builder.query({
       query: (postId) => `/posts/${postId}`,
+      providesTags: (result, error, postId) => [{ type: 'Post', id: postId }],
     }),
 
     downvotePost: builder.mutation({
@@ -65,16 +91,21 @@ export const reportApi = createApi({
         url: `/posts/${postId}/downvote`,
         method: "POST",
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, postId) => [
+        { type: 'Post', id: postId },
+      ],
     }),
-     // Comment endpoints
+    
+    // Comment endpoints
     addComment: builder.mutation({
       query: ({ postId, text }) => ({
         url: `/posts/${postId}/comments`,
         method: "POST",
         body: { text },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
 
     addReply: builder.mutation({
@@ -83,7 +114,9 @@ export const reportApi = createApi({
         method: "POST",
         body: { text },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
 
     voteComment: builder.mutation({
@@ -92,7 +125,9 @@ export const reportApi = createApi({
         method: "POST",
         body: { type },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
 
     voteReply: builder.mutation({
@@ -101,7 +136,9 @@ export const reportApi = createApi({
         method: "POST",
         body: { type },
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
 
     deleteComment: builder.mutation({
@@ -109,14 +146,30 @@ export const reportApi = createApi({
         url: `/posts/${postId}/comments/${commentId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
+    
     deleteReply: builder.mutation({
       query: ({ postId, commentId, replyId }) => ({
         url: `/posts/${postId}/comments/${commentId}/replies/${replyId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ['Post'],
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
+    }),
+    
+    finalizeReport: builder.mutation({
+      query: ({ postId, description }) => ({
+        url: `/posts/${postId}/finalize`,
+        method: "POST",
+        body: { description },
+      }),
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
     }),
   }),
 });
@@ -138,4 +191,6 @@ export const {
   useVoteReplyMutation,
   useDeleteCommentMutation,
   useDeleteReplyMutation,
-  useGetPostByIdQuery, } = reportApi;
+  useGetPostByIdQuery,
+  useFinalizeReportMutation,
+} = reportApi;

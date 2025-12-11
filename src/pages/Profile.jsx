@@ -6,10 +6,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Camera, Check, X, BadgeCheck, AlertTriangle, Search, Loader2 } from "lucide-react";
 import Post from "@/components/layout/PostCard";
+import MissingPersonModal from "@/components/layout/MissingPersonModal";
+import { openModal } from "@/lib/redux/slices/missingPersonSlice";
 import ReportWizard from "@/components/layout/ReportWizard";
 import { 
   setProfile, 
@@ -104,6 +107,11 @@ export default function Profile() {
     setBioInput(user?.bio || "");
   }, [user?.bio]);
 
+  const handleReportMissingPerson = () => {
+    dispatch(openModal());
+  };
+
+  
   // 🔹 Handle Banner Image Upload with API Integration
   const handleBannerUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -547,26 +555,30 @@ export default function Profile() {
                   <CardTitle>Following</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-3">
-                  {user.following.slice(0, 9).map((u) => (
-                    <div key={u._id} className="flex flex-col items-center">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={u.profilePicture} />
-                        <AvatarFallback>{u.username[0]}</AvatarFallback>
-                      </Avatar>
-                      <p className="max-w-full mt-1 text-xs truncate">@{u.username}</p>
-                    </div>
-                  ))}
-                  {user.following.length > 9 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="col-span-3 mt-2"
-                      onClick={() => setShowFollowing(true)}
-                    >
-                      See all following
-                    </Button>
-                  )}
-                </CardContent>
+                {user.following.slice(0, 9).map((u) => (
+                  <Link
+                    key={u._id}
+                    to={`/profile/${u.username}`}
+                    className="flex flex-col items-center hover:opacity-80 transition"
+                  >
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={u.profilePicture} />
+                      <AvatarFallback>{u.username[0]}</AvatarFallback>
+                    </Avatar>
+                    <p className="max-w-full mt-1 text-xs truncate">@{u.username}</p>
+                  </Link>
+                ))}
+                {user.following.length > 9 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="col-span-3 mt-2"
+                    onClick={() => setShowFollowing(true)}
+                  >
+                    See all following
+                  </Button>
+                )}
+              </CardContent>
               </Card>
             )}
           </div>
@@ -588,7 +600,7 @@ export default function Profile() {
                       <AlertTriangle className="w-5 h-5 mr-2" />
                       Report a Crime
                     </Button>
-                    <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">
+                    <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700" onClick={handleReportMissingPerson}>
                       <Search className="w-5 h-5 mr-2" />
                       Report Missing Person
                     </Button>
@@ -661,13 +673,23 @@ export default function Profile() {
                   </div>
                   {/* Only show follow button if not the current user */}
                   {currentUser && currentUser.username !== follower.username && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                    >
-                      Follow
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await followUser(follower.username).unwrap();
+                        dispatch(setFollowStatus(true)); // optional: update Redux if needed
+                        // optionally update the followers list locally
+                      } catch (err) {
+                        console.error("Failed to follow user:", err);
+                      }
+                    }}
+                  >
+                    Follow
+                  </Button>
+                )}
+
                 </div>
               ))
             ) : (
@@ -726,6 +748,9 @@ export default function Profile() {
       </Dialog>
       
       <ReportWizard open={open} onOpenChange={setOpen} onPostCreated={refetchPosts}/>
+      
+      {/* Missing Person Modal */}
+      <MissingPersonModal />
       
       {/* Unfollow Confirmation Dialog */}      
       <Dialog open={showUnfollowConfirm} onOpenChange={setShowUnfollowConfirm}>

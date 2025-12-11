@@ -1,5 +1,5 @@
 // components/layout/PostCard.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -44,19 +44,23 @@ import {
   useUnfollowUserMutation 
 } from "@/lib/redux/api/profileApi";
 import { useNavigate } from "react-router-dom";
-
-// Add this import if you don't have it
 import PostModal from "./PostModal";
 
 export default function PostCard({ post, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
   const isOwner = currentUser && post.user?._id === currentUser._id;
 
-  // Add state for modal
+  // 🔥 Single source of truth for post data
+  const [postData, setPostData] = useState(post);
+
+  // Sync postData when post prop changes (e.g., after refetch)
+  useEffect(() => {
+    setPostData(post);
+  }, [post]);
+
+  // Modal states
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
-
-  // Add state for fullscreen image viewer
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -92,46 +96,51 @@ export default function PostCard({ post, refetchPosts }) {
     } catch (err) { console.error("Unfollow failed:", err); }
   };
 
-  // Keep original image click handler for PostModal
+  // Image handlers
   const handleImageClick = () => {
-    setSelectedPostId(post._id);
-    setSelectedPost(post);
+    setSelectedPostId(postData._id);
+    setSelectedPost(postData);
   };
 
-  // New handler for slider image click (opens fullscreen viewer)
   const handleSliderImageClick = (index = 0) => {
     setCurrentImageIndex(index);
     setIsImageViewerOpen(true);
   };
 
-  // Add modal close handler
   const handleClosePost = () => {
     setSelectedPostId(null);
     setSelectedPost(null);
   };
 
-  // Close image viewer
   const handleCloseImageViewer = () => {
     setIsImageViewerOpen(false);
   };
 
-  // Voting
+  // 🔥 UPDATED: Voting with separate counters
   const [upvotePost, { isLoading: isUpvoting }] = useUpvotePostMutation();
   const [downvotePost, { isLoading: isDownvoting }] = useDownvotePostMutation();
-  const [userVote, setUserVote] = useState(post?.userVote || null);
 
   const handleVote = async (type) => {
     if (!currentUser) return;
-    const previousVote = userVote;
-    setUserVote(previousVote === type ? null : type);
 
     try {
-      if (type === 'upvote') await upvotePost(post._id).unwrap();
-      else await downvotePost(post._id).unwrap();
-      if (refetchPosts) refetchPosts();
+      let response;
+      if (type === 'upvote') {
+        response = await upvotePost(postData._id).unwrap();
+      } else {
+        response = await downvotePost(postData._id).unwrap();
+      }
+      
+      // 🔥 Update with server response - separate counters
+      setPostData(prevData => ({
+        ...prevData,
+        userVote: response.userVote,
+        upvotes: response.upvotes !== undefined ? response.upvotes : prevData.upvotes,
+        downvotes: response.downvotes !== undefined ? response.downvotes : prevData.downvotes
+      }));
+      
     } catch (err) {
       console.error('Vote failed:', err);
-      setUserVote(previousVote);
     }
   };
 
@@ -143,8 +152,14 @@ export default function PostCard({ post, refetchPosts }) {
 
   const handleEdit = async (postId, newDescription) => {
     try {
-      await updatePost({ postId, description: newDescription }).unwrap();
+      const response = await updatePost({ postId, description: newDescription }).unwrap();
       setEditDialogOpen(false);
+      
+      setPostData(prevData => ({
+        ...prevData,
+        description: newDescription
+      }));
+      
       if (refetchPosts) refetchPosts();
     } catch (err) { console.error("Edit failed:", err); }
   };
@@ -162,6 +177,11 @@ export default function PostCard({ post, refetchPosts }) {
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [addComment] = useAddCommentMutation();
+
+  // Sync comments when post changes
+  useEffect(() => {
+    setComments(post.comments || []);
+  }, [post.comments]);
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !currentUser) return;
@@ -186,15 +206,24 @@ export default function PostCard({ post, refetchPosts }) {
     setNewComment("");
 
     try {
-      await addComment({ postId: post._id, text: localComment.text }).unwrap();
-      // Optionally replace temp ID with real ID from server
+      const response = await addComment({ postId: postData._id, text: localComment.text }).unwrap();
+      // Replace temp comment with real one
+      setComments((prev) => 
+        prev.map(c => c._id === localComment._id ? response.comment : c)
+      );
     } catch (err) {
       console.error("Add comment failed:", err);
       setComments((prev) => prev.filter((c) => c._id !== localComment._id));
     }
   };
 
-  const netVotes = (post.upvotes?.length || 0) - (post.downvotes?.length || 0);
+  // 🔥 UPDATED: Get separate upvote and downvote counts
+  const upvoteCount = typeof postData.upvotes === 'number' 
+    ? postData.upvotes 
+    : (postData.upvotes?.length || 0);
+  const downvoteCount = typeof postData.downvotes === 'number' 
+    ? postData.downvotes 
+    : (postData.downvotes?.length || 0);
 
   if (!post) return null;
 
@@ -209,25 +238,25 @@ export default function PostCard({ post, refetchPosts }) {
               onClick={handleProfileClick}
             >
               <Avatar>
-                <AvatarImage src={post.user?.profilePicture || "/default-avatar.png"} />
-                <AvatarFallback>{post.user?.name?.[0] || "U"}</AvatarFallback>
+                <AvatarImage src={postData.user?.profilePicture || "/default-avatar.png"} />
+                <AvatarFallback>{postData.user?.name?.[0] || "U"}</AvatarFallback>
               </Avatar>
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{post.user?.name}</h3>
-                  {post.user?.verified && <CheckCircle2 className="w-4 h-4 text-blue-500" />}
-                  {post.crimeType && <Badge variant="secondary">{post.crimeType}</Badge>}
+                  <h3 className="font-semibold">{postData.user?.name}</h3>
+                  {postData.user?.verified && <CheckCircle2 className="w-4 h-4 text-blue-500" />}
+                  {postData.crimeType && <Badge variant="secondary">{postData.crimeType}</Badge>}
                 </div>
                 <p className="text-sm text-gray-500">
-                  @{post.user?.username} • {new Date(post.createdAt).toLocaleString()}
+                  @{postData.user?.username} • {new Date(postData.createdAt).toLocaleString()}
                 </p>
               </div>
             </div>
 
             {/* Top Right */}
             <div className="flex items-center gap-2">
-              {!isOwner && currentUser && post.user?.username && !post.anonymous && (
+              {!isOwner && currentUser && postData.user?.username && !postData.anonymous && (
                 <Button
                   variant={isFollowingUser ? "outline" : "default"}
                   size="sm"
@@ -269,45 +298,46 @@ export default function PostCard({ post, refetchPosts }) {
           </div>
 
           {/* Description */}
-          <p className="mt-3 text-sm whitespace-pre-line">{post.description}</p>
+          <p className="mt-3 text-sm whitespace-pre-line">{postData.description}</p>
 
           {/* Hashtags */}
           <div className="flex flex-wrap gap-2 mt-2">
-            {post.hashtags?.map((tag, i) => (
+            {postData.hashtags?.map((tag, i) => (
               <Badge key={i} variant="outline">{tag}</Badge>
             ))}
           </div>
 
           {/* Images - Updated with Swiper slider */}
-          {post.images?.length > 0 && (
+          {postData.images?.length > 0 && (
             <div className="mt-3">
               <Swiper
-                modules={[Navigation, Pagination]}
+                modules={[Navigation, Pagination, Zoom, Keyboard]}
                 spaceBetween={10}
                 slidesPerView={1}
-                navigation={post.images.length > 1}
-                pagination={{ 
-                  clickable: true,
-                  dynamicBullets: true 
-                }}
+                navigation={postData.images.length > 1}
+                pagination={{ clickable: true, dynamicBullets: true }}
+                autoHeight={true}
+                keyboard={{ enabled: true }}
+                zoom={true}
                 className="rounded-lg post-image-swiper"
               >
-                {post.images.map((img, index) => (
+                {postData.images.map((img, index) => (
                   <SwiperSlide key={index}>
                     <div 
-                      className="relative w-full overflow-hidden bg-gray-100 rounded-lg cursor-pointer "
-                      onClick={handleImageClick} // Keep original click functionality
+                      className="relative flex items-center justify-center w-full bg-gray-100 rounded-lg cursor-pointer"
+                      onClick={handleImageClick} 
                     >
                       <img
                         src={img}
                         alt={`Post image ${index + 1}`}
-                        className="object-contain w-full h-full transition-transform duration-300 rounded-lg hover:scale-105"
+                        className="max-h-[80vh] w-auto h-auto object-contain transition-transform duration-300 rounded-lg hover:scale-105"
                       />
                     </div>
                   </SwiperSlide>
                 ))}
               </Swiper>
-              {post.images.length > 1 && (
+
+              {postData.images.length > 1 && (
                 <div className="mt-2 text-xs text-center text-gray-500">
                   Slide to view more images
                 </div>
@@ -315,9 +345,19 @@ export default function PostCard({ post, refetchPosts }) {
             </div>
           )}
 
-          {/* Votes + Comments count */}
+          {/* 🔥 UPDATED: Separate vote counters display */}
           <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
-            <span>{netVotes} votes • {comments.length} comments</span>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <ChevronUp className="w-4 h-4 text-green-600" />
+                {upvoteCount} upvotes
+              </span>
+              <span className="flex items-center gap-1">
+                <ChevronDown className="w-4 h-4 text-red-600" />
+                {downvoteCount} downvotes
+              </span>
+            </div>
+            <span>{comments.length} comments</span>
           </div>
 
           <hr className="my-3" />
@@ -326,7 +366,7 @@ export default function PostCard({ post, refetchPosts }) {
           <div className="flex justify-around">
             <Button
               variant="ghost"
-              className={`flex items-center gap-1 ${userVote === "upvote" ? "text-green-600" : ""}`}
+              className={`flex items-center gap-1 ${postData.userVote === "upvote" ? "text-green-600" : ""}`}
               onClick={() => handleVote("upvote")}
               disabled={isUpvoting || isDownvoting || !currentUser}
             >
@@ -336,7 +376,7 @@ export default function PostCard({ post, refetchPosts }) {
 
             <Button
               variant="ghost"
-              className={`flex items-center gap-1 ${userVote === "downvote" ? "text-red-600" : ""}`}
+              className={`flex items-center gap-1 ${postData.userVote === "downvote" ? "text-red-600" : ""}`}
               onClick={() => handleVote("downvote")}
               disabled={isUpvoting || isDownvoting || !currentUser}
             >
@@ -351,16 +391,6 @@ export default function PostCard({ post, refetchPosts }) {
             >
               <MessageCircle className="w-4 h-4" /> Comment
             </Button>
-
-            {/* <Button variant="ghost" className="flex items-center gap-1">
-              <Share className="w-4 h-4" /> Share
-            </Button> */}
-
-            {/* {!isOwner && currentUser && (
-              <Button variant="ghost" className="flex items-center gap-1">
-                <Flag className="w-4 h-4" /> Report
-              </Button>
-            )} */}
           </div>
 
           {/* Comments Section */}
@@ -398,8 +428,8 @@ export default function PostCard({ post, refetchPosts }) {
                     <PostComment
                       key={comment._id}
                       comment={comment}
-                      postId={post._id}
-                      postOwnerId={post.user?._id}
+                      postId={postData._id}
+                      postOwnerId={postData.user?._id}
                       refetchPosts={refetchPosts}
                     />
                   ))
@@ -416,7 +446,7 @@ export default function PostCard({ post, refetchPosts }) {
       <EditPostDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        post={post}
+        post={postData}
         onSave={handleEdit}
         isLoading={isUpdating}
       />
@@ -424,7 +454,7 @@ export default function PostCard({ post, refetchPosts }) {
       <DeletePostDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        post={post}
+        post={postData}
         onDelete={handleDelete}
         isLoading={isDeleting}
       />
@@ -433,7 +463,7 @@ export default function PostCard({ post, refetchPosts }) {
       <PostModal
         selectedPostId={selectedPostId}
         handleClosePost={handleClosePost}
-        post={selectedPost}
+        post={selectedPost || postData}
         refetchPosts={refetchPosts}
       />
 
@@ -465,11 +495,11 @@ export default function PostCard({ post, refetchPosts }) {
               zoom={true}
               keyboard={{ enabled: true }}
               initialSlide={currentImageIndex}
-              className="w-full h-full"
+              className="w-full "
             >
-              {post.images.map((img, index) => (
+              {postData.images.map((img, index) => (
                 <SwiperSlide key={index}>
-                  <div className="swiper-zoom-container">
+                  <div className="h-auto swiper-zoom-container">
                     <img
                       src={img}
                       alt={`Post image ${index + 1}`}
@@ -480,7 +510,7 @@ export default function PostCard({ post, refetchPosts }) {
               ))}
             </Swiper>
 
-            {/* Custom navigation buttons - Smaller */}
+            {/* Custom navigation buttons */}
             <button className="absolute z-10 p-1 text-white transition-all transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full swiper-button-prev-custom left-2 top-1/2 hover:bg-opacity-70">
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -491,7 +521,7 @@ export default function PostCard({ post, refetchPosts }) {
         </div>
       )}
 
-      {/* Custom styles for smaller arrows in the main swiper */}
+      {/* Custom styles */}
       <style jsx>{`
         .post-image-swiper .swiper-button-prev,
         .post-image-swiper .swiper-button-next {

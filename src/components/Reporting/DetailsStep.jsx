@@ -1,8 +1,9 @@
+// components/Reporting/DetailsStep.jsx
 import React, { useState, useMemo, useEffect, useRef} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateDraft } from "@/lib/redux/slices/reportSlice";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Loader2, MapPin, AlertCircle } from "lucide-react";
+import { ChevronDown, Loader2, MapPin, AlertCircle, Check } from "lucide-react";
 import { debounce } from "lodash";
 import {
   useLazySearchLocationsQuery,
@@ -27,9 +28,9 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-export default function DetailsStep() {
+export default function DetailsStep({ onSubmit, isLoading, canSubmit }) {
   const [triggerSearchLocations] = useLazySearchLocationsQuery();
-const [triggerReverseGeocode] = useLazyReverseGeocodeQuery();
+  const [triggerReverseGeocode] = useLazyReverseGeocodeQuery();
   const dispatch = useDispatch();
   const draft = useSelector((s) => s.report.draft);
 
@@ -71,79 +72,77 @@ const [triggerReverseGeocode] = useLazyReverseGeocodeQuery();
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [error, setError] = useState(null);
 
-// Location search (debounced)
-
-const fetchLocations = useMemo(
-  () =>
-    debounce(async (search) => {
-      if (!search.trim()) {
-        setSuggestions([]);
+  // Location search (debounced)
+  const fetchLocations = useMemo(
+    () =>
+      debounce(async (search) => {
+        if (!search.trim()) {
+          setSuggestions([]);
+          setError(null);
+          return;
+        }
+        setIsLocationLoading(true);
         setError(null);
-        return;
-      }
-      setIsLoading(true);
-      setError(null);
 
-      try {
-        const data = await triggerSearchLocations(search).unwrap();
-        setSuggestions(data);
-      } catch (err) {
-        console.error("Location search error:", err);
-        setError("Failed to fetch locations. Please try again.");
-        setSuggestions([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 500),
-  [triggerSearchLocations]
-);
-
-const useMyLocation = () => {
-  if (!navigator.geolocation) {
-    setError("Geolocation is not supported by your browser");
-    return;
-  }
-
-  setIsLoading(true);
-  setError(null);
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      try {
-        const data = await triggerReverseGeocode({ lat: latitude, lon: longitude }).unwrap();
-
-        dispatch(
-          updateDraft({
-            locationText: data.display_name,
-            coordinates: { lat: latitude, lng: longitude },
-          })
-        );
-        setLocationSearch(data.display_name);
-        setError(null);
-      } catch (err) {
-        console.error("Reverse geocode failed:", err);
-        setError("Failed to fetch location information. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    (err) => {
-      console.error("Location error:", err);
-      setError(
-        err.code === err.PERMISSION_DENIED
-          ? "Location access denied. Please enable location permissions in your browser."
-          : "Location unavailable. Please try again."
-      );
-      setIsLoading(false);
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        try {
+          const data = await triggerSearchLocations(search).unwrap();
+          setSuggestions(data);
+        } catch (err) {
+          console.error("Location search error:", err);
+          setError("Failed to fetch locations. Please try again.");
+          setSuggestions([]);
+        } finally {
+          setIsLocationLoading(false);
+        }
+      }, 500),
+    [triggerSearchLocations]
   );
-};
 
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocationLoading(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const data = await triggerReverseGeocode({ lat: latitude, lon: longitude }).unwrap();
+
+          dispatch(
+            updateDraft({
+              locationText: data.display_name,
+              coordinates: { lat: latitude, lng: longitude },
+            })
+          );
+          setLocationSearch(data.display_name);
+          setError(null);
+        } catch (err) {
+          console.error("Reverse geocode failed:", err);
+          setError("Failed to fetch location information. Please try again.");
+        } finally {
+          setIsLocationLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Location error:", err);
+        setError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location access denied. Please enable location permissions in your browser."
+            : "Location unavailable. Please try again."
+        );
+        setIsLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   const handleLocationChange = (e) => {
     setLocationSearch(e.target.value);
@@ -168,58 +167,12 @@ const useMyLocation = () => {
     setError(null);
   };
 
-  // // ✅ Cancel debounce on unmount
+  // Cancel debounce on unmount
   useEffect(() => {
     return () => fetchLocations.cancel();
   }, [fetchLocations]);
 
-  // --- Reverse geocode for "Use My Location" ---
-  // const useMyLocation = () => {
-  //   if (!navigator.geolocation) {
-  //     setError("Geolocation is not supported by your browser");
-  //     return;
-  //   }
-
-  //   setIsLoading(true);
-  //   setError(null);
-
-  //   navigator.geolocation.getCurrentPosition(
-  //     async (pos) => {
-  //       const { latitude, longitude } = pos.coords;
-  //       try {
-  //         const data = await fetchWithRetry(
-  //           `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-  //         );
-
-  //         dispatch(
-  //           updateDraft({
-  //             locationText: data.display_name,
-  //             coordinates: { lat: latitude, lng: longitude },
-  //           })
-  //         );
-  //         setLocationSearch(data.display_name);
-  //         setError(null);
-  //       } catch (err) {
-  //         console.error("Reverse geocode failed:", err);
-  //         setError("Failed to fetch location information. Please try again.");
-  //       } finally {
-  //         setIsLoading(false);
-  //       }
-  //     },
-  //     (err) => {
-  //       console.error("Location error:", err);
-  //       setError(
-  //         err.code === err.PERMISSION_DENIED
-  //           ? "Location access denied. Please enable location permissions in your browser."
-  //           : "Location unavailable. Please try again."
-  //       );
-  //       setIsLoading(false);
-  //     },
-  //     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-  //   );
-  // };
-
-  // --- Click outside & Escape to close dropdowns ---
+  // Click outside & Escape to close dropdowns
   const wrapperRef = useRef(null);
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -332,7 +285,7 @@ const useMyLocation = () => {
           />
         </div>
         
-        {isLoading && (
+        {isLocationLoading && (
           <div className="absolute flex items-center mt-1 text-sm text-gray-500">
             <Loader2 className="w-4 h-4 mr-1 animate-spin" />
             Searching...
@@ -364,10 +317,10 @@ const useMyLocation = () => {
         
         <Button
           onClick={useMyLocation}
-          disabled={isLoading}
+          disabled={isLocationLoading}
           className="mt-2 text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? (
+          {isLocationLoading ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <MapPin className="w-4 h-4 mr-2" />
@@ -398,6 +351,30 @@ const useMyLocation = () => {
           consequences.
         </span>
       </label>
+
+      {/* ✅ SUBMIT BUTTON - ADDED HERE */}
+      <div className="pt-4 border-t">
+        <Button
+          onClick={onSubmit}
+          disabled={!canSubmit || isLoading}
+          className="w-full py-3 text-base font-semibold text-white transition bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Submitting Report...
+            </>
+          ) : (
+            <>
+              <Check className="w-5 h-5 mr-2" />
+              Submit Report
+            </>
+          )}
+        </Button>
+        <p className="mt-2 text-xs text-center text-gray-500">
+          Your report will be submitted and you can preview it
+        </p>
+      </div>
     </div>
   );
 }

@@ -6,15 +6,22 @@ const initialState = {
     images: [],           // cropped previews [{ url, name }]
     originalImages: [],   // raw originals [{ url, name }] (file stripped)
     incidentDescription: "", // text from step 1
+    aiGeneratedSummary: "", // AI-generated summary
     crimeType: "",        // selected type
     date: "",
     time: "",
     locationText: "",     // readable string (search or my location)
-    coordinates: { lat: null, lng: null }, // ✅ added
+    coordinates: { lat: null, lng: null },
     anonymous: false,
     agreed: false,
   },
   posts: [], // ✅ all posts fetched for feed/profile
+  // ✅ Added: Post approval state
+  postApproval: {
+    isOpen: false,        // Whether approval modal is open
+    isApproved: false,    // Whether post was approved
+    isLoading: false,     // Loading state for approval
+  },
 };
 
 const sanitizeImages = (images = []) =>
@@ -41,9 +48,12 @@ const reportSlice = createSlice({
 
       state.draft = { ...state.draft, ...payload };
     },
+    
     resetReport(state) {
       state.draft = { ...initialState.draft };
+      state.postApproval = { ...initialState.postApproval }; // Reset approval state too
     },
+    
     hydrateFromStorage(state, action) {
       const payload = { ...action.payload };
 
@@ -57,22 +67,48 @@ const reportSlice = createSlice({
       state.draft = { ...state.draft, ...payload };
     },
 
+    // --- POST APPROVAL HANDLERS ---
+    setPostApprovalOpen(state, action) {
+      state.postApproval.isOpen = action.payload;
+    },
+    
+    setPostApproved(state, action) {
+      state.postApproval.isApproved = action.payload;
+    },
+    
+    setPostApprovalLoading(state, action) {
+      state.postApproval.isLoading = action.payload;
+    },
+    
+    resetPostApproval(state) {
+      state.postApproval = { ...initialState.postApproval };
+    },
+
     // --- POSTS HANDLERS ---
     setPosts(state, action) {
       state.posts = action.payload;
     },
+    
     addPost(state, action) {
       state.posts.unshift(action.payload); // new post goes to top of feed
     },
+    
     updatePost(state, action) {
       const updated = action.payload;
       state.posts = state.posts.map((p) =>
         p._id === updated._id ? updated : p
       );
     },
+    
     deletePost(state, action) {
       const postId = action.payload;
       state.posts = state.posts.filter((p) => p._id !== postId);
+    },
+    
+    // ✅ Custom action to prepare post for approval
+    prepareForApproval(state) {
+      // This ensures all data is properly formatted for the approval view
+      // No state changes needed here, just a placeholder for future logic
     },
   },
 });
@@ -99,6 +135,12 @@ export const {
   addPost,
   updatePost,
   deletePost,
+  // Export new post approval actions
+  setPostApprovalOpen,
+  setPostApproved,
+  setPostApprovalLoading,
+  resetPostApproval,
+  prepareForApproval,
 } = reportSlice.actions;
 
 export default reportSlice.reducer;

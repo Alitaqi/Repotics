@@ -6,10 +6,20 @@ import Cropper from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-// helper: crop to a blob URL
+// 🔥 NEW: Convert File to base64 string
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+// 🔥 UPDATED: Now works with base64 strings
 const getCroppedImg = async (imageSrc, _crop, _zoom, _aspect, croppedAreaPixels) => {
   const image = new Image();
-  image.src = imageSrc;
+  image.src = imageSrc; // Can be base64 or blob URL
   await new Promise((resolve) => (image.onload = resolve));
 
   const canvas = document.createElement("canvas");
@@ -29,15 +39,10 @@ const getCroppedImg = async (imageSrc, _crop, _zoom, _aspect, croppedAreaPixels)
     canvas.height
   );
 
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (!blob) return resolve(null);
-      resolve(URL.createObjectURL(blob));
-    }, "image/jpeg");
-  });
+  // 🔥 Return base64 instead of blob URL
+  return canvas.toDataURL("image/jpeg", 0.9);
 };
 
-// eslint-disable-next-line no-unused-vars
 export default function ImageStep({ files, setFiles }) {
   const dispatch = useDispatch();
   const draft = useSelector((s) => s.report.draft);
@@ -54,22 +59,30 @@ export default function ImageStep({ files, setFiles }) {
 
   const active = useMemo(() => images[current]?.url, [images, current]);
 
-  const handleFiles = (files) => {
-    const arr = Array.from(files || []);
-    const originalsArr = arr.map((f) => ({
-      url: URL.createObjectURL(f),
+  // 🔥 UPDATED: Convert files to base64 before storing
+  const handleFiles = async (fileList) => {
+    const arr = Array.from(fileList || []);
+    
+    // Convert all files to base64
+    const base64Promises = arr.map(async (f) => ({
+      url: await fileToBase64(f), // 🔥 Store as base64
       name: f.name,
     }));
-    // keep files locally for FormData later
+    
+    const originalsArr = await Promise.all(base64Promises);
+    
+    // Keep files locally for FormData later
     setFiles(prev => [...prev, ...arr.map(f => ({ name: f.name, file: f }))]);
-    // show originals by default
+    
+    // Store base64 strings in Redux (will persist in localStorage)
     dispatch(
       safeUpdateDraft({
         originalImages: [...originals, ...originalsArr],
         images: [...images, ...originalsArr],
       })
     );
-    // jump to first newly added if none before
+    
+    // Jump to first newly added if none before
     if (images.length === 0) setCurrent(0);
   };
 
@@ -78,12 +91,21 @@ export default function ImageStep({ files, setFiles }) {
   const saveCrop = async () => {
     const original = originals[current];
     if (!original || !croppedAreaPixels) return;
-    const croppedUrl = await getCroppedImg(original.url, crop, zoom, 4 / 3, croppedAreaPixels);
-    if (!croppedUrl) return;
+    
+    // 🔥 getCroppedImg now returns base64
+    const croppedBase64 = await getCroppedImg(
+      original.url, 
+      crop, 
+      zoom, 
+      4 / 3, 
+      croppedAreaPixels
+    );
+    
+    if (!croppedBase64) return;
 
     const next = [...images];
-    next[current] = { ...next[current], url: croppedUrl };
-   dispatch(safeUpdateDraft({ images: next })); // originals kept for re-cropping
+    next[current] = { ...next[current], url: croppedBase64 };
+    dispatch(safeUpdateDraft({ images: next }));
 
     setCropDialogOpen(false);
   };
@@ -93,14 +115,20 @@ export default function ImageStep({ files, setFiles }) {
     if (!original) return;
     const next = [...images];
     next[current] = { ...original };
-     dispatch(safeUpdateDraft({ images: next }));
+    dispatch(safeUpdateDraft({ images: next }));
     setCropDialogOpen(false);
   };
 
   const removeCurrent = () => {
     const nextImages = images.filter((_, i) => i !== current);
     const nextOriginals = originals.filter((_, i) => i !== current);
+    
+    // Also remove from files array
+    const nextFiles = files.filter((_, i) => i !== current);
+    setFiles(nextFiles);
+    
     dispatch(safeUpdateDraft({ images: nextImages, originalImages: nextOriginals }));
+    
     if (nextImages.length === 0) {
       setCurrent(0);
       return;
@@ -108,12 +136,8 @@ export default function ImageStep({ files, setFiles }) {
     setCurrent((idx) => Math.min(idx, nextImages.length - 1));
   };
 
-  useEffect(() => {
-  return () => {
-    images.forEach(img => URL.revokeObjectURL(img.url));
-  };
-}, [images]);
-
+  // 🔥 REMOVED: No need to revoke blob URLs anymore since we use base64
+  // useEffect cleanup is no longer needed
 
   return (
     <div className="relative space-y-4">
@@ -191,7 +215,7 @@ export default function ImageStep({ files, setFiles }) {
             ))}
           </div>
 
-          {/* add more (+) — inside the carousel, bottom-right, gray */}
+          {/* add more (+) */}
           <label className="absolute p-2 text-white transition rounded-full shadow-md cursor-pointer bottom-3 right-3 bg-black/50 hover:bg-gray-600">
             <Plus className="w-5 h-5" />
             <input
@@ -205,13 +229,13 @@ export default function ImageStep({ files, setFiles }) {
         </div>
       )}
 
-      {/* Description (no blue focus ring) */}
+      {/* Description */}
       <div>
         <label className="block mb-1 text-sm font-medium text-gray-700">Incident Description</label>
         <textarea
           rows={3}
           placeholder="Describe what happened…"
-          value={draft.incidentDescription}
+          value={draft.incidentDescription || ""}
           onChange={(e) => dispatch(updateDraft({ incidentDescription: e.target.value }))}
           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-400"
         />

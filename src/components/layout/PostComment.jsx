@@ -1,11 +1,11 @@
-// components/layout/Comment.jsx
-import { useState } from "react";
+// components/layout/PostComment.jsx
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown, Reply, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, Reply, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,22 +42,64 @@ const isUserOwner = (user, currentUser) => {
   return userId === currentUserId;
 };
 
-// Reply component
-function ReplyComment({ reply, postId, commentId, refetchPosts }) {
+// Reply component - UPDATED WITH SEPARATE COUNTERS
+function ReplyComment({ reply: initialReply, postId, commentId, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
-  const [voteReply] = useVoteReplyMutation();
+  const [voteReply, { isLoading: isVoting }] = useVoteReplyMutation();
   const [deleteReply] = useDeleteReplyMutation();
   
-  const replyUser = getUserData(reply.user);
-  const isReplyOwner = isUserOwner(reply.user, currentUser);
-  const netVotes = (reply.upvotes?.length || 0) - (reply.downvotes?.length || 0);
+  // Local state synced from prop
+  const [replyData, setReplyData] = useState(initialReply);
 
+  // Sync when parent updates
+  useEffect(() => {
+    setReplyData(initialReply);
+  }, [initialReply]);
+  
+  const replyUser = getUserData(replyData.user);
+  const isReplyOwner = isUserOwner(replyData.user, currentUser);
+  
+  // 🔥 UPDATED: Get separate upvote and downvote counts
+  const upvoteCount = typeof replyData.upvotes === 'number' 
+    ? replyData.upvotes 
+    : (replyData.upvotes?.length || 0);
+  const downvoteCount = typeof replyData.downvotes === 'number' 
+    ? replyData.downvotes 
+    : (replyData.downvotes?.length || 0);
+
+  // Direct backend sync
   const handleVote = async (type) => {
-    if (!currentUser) return;
+    if (!currentUser || isVoting) return;
     
     try {
-      await voteReply({ postId, commentId, replyId: reply._id, type }).unwrap();
-      if (refetchPosts) refetchPosts();
+      // Call backend and wait for response
+      const response = await voteReply({ postId, commentId, replyId: replyData._id, type }).unwrap();
+      
+      // Update with EXACT backend data
+      if (response.reply) {
+        setReplyData(prevData => ({
+          ...prevData,
+          userVote: response.reply.userVote,
+          upvotes: response.reply.upvotes !== undefined ? response.reply.upvotes : prevData.upvotes,
+          downvotes: response.reply.downvotes !== undefined ? response.reply.downvotes : prevData.downvotes
+        }));
+      } else if (response.comment) {
+        // Some backends return the parent comment with updated reply
+        const updatedReply = response.comment.replies?.find(r => r._id === replyData._id);
+        if (updatedReply) {
+          setReplyData(prevData => ({
+            ...prevData,
+            userVote: updatedReply.userVote,
+            upvotes: updatedReply.upvotes !== undefined ? updatedReply.upvotes : prevData.upvotes,
+            downvotes: updatedReply.downvotes !== undefined ? updatedReply.downvotes : prevData.downvotes
+          }));
+        }
+      }
+      
+      // Optional: refetch to sync everything
+      if (refetchPosts) {
+        setTimeout(() => refetchPosts(), 100);
+      }
     } catch (error) {
       console.error('Vote reply failed:', error);
     }
@@ -67,7 +109,7 @@ function ReplyComment({ reply, postId, commentId, refetchPosts }) {
     if (!window.confirm('Are you sure you want to delete this reply?')) return;
     
     try {
-      await deleteReply({ postId, commentId, replyId: reply._id }).unwrap();
+      await deleteReply({ postId, commentId, replyId: replyData._id }).unwrap();
       if (refetchPosts) refetchPosts();
     } catch (error) {
       console.error('Delete reply failed:', error);
@@ -87,10 +129,9 @@ function ReplyComment({ reply, postId, commentId, refetchPosts }) {
           <span className="text-xs font-medium">{replyUser.name}</span>
           {replyUser.verified && <Badge variant="secondary" className="h-3 text-xs">✓</Badge>}
           <span className="text-xs text-gray-500">
-            {new Date(reply.createdAt).toLocaleDateString()}
+            {new Date(replyData.createdAt).toLocaleDateString()}
           </span>
           
-          {/* Add delete option for reply owner */}
           {isReplyOwner && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -108,55 +149,102 @@ function ReplyComment({ reply, postId, commentId, refetchPosts }) {
           )}
         </div>
         
-        <p className="mb-1 text-xs">{reply.text}</p>
+        <p className="mb-1 text-xs">{replyData.text}</p>
         
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-5 px-1 ${reply.userVote === "upvote" ? "text-green-600" : ""}`}
-              onClick={() => handleVote("upvote")}
-            >
-              <ChevronUp className="w-3 h-3" />
-            </Button>
-            <span>{netVotes}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-5 px-1 ${reply.userVote === "downvote" ? "text-red-600" : ""}`}
-              onClick={() => handleVote("downvote")}
-            >
-              <ChevronDown className="w-3 h-3" />
-            </Button>
-          </div>
+        {/* 🔥 UPDATED: Separate vote counters display */}
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-5 px-1 gap-1 ${replyData.userVote === "upvote" ? "text-green-600" : ""}`}
+            onClick={() => handleVote("upvote")}
+            disabled={isVoting || !currentUser}
+          >
+            {isVoting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronUp className="w-3 h-3" />}
+            <span className={isVoting ? "opacity-50" : ""}>{upvoteCount}</span>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-5 px-1 gap-1 ${replyData.userVote === "downvote" ? "text-red-600" : ""}`}
+            onClick={() => handleVote("downvote")}
+            disabled={isVoting || !currentUser}
+          >
+            {isVoting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronDown className="w-3 h-3" />}
+            <span className={isVoting ? "opacity-50" : ""}>{downvoteCount}</span>
+          </Button>
         </div>
       </div>
     </div>
   );
 }
 
-// Main Comment component
-export default function Comment({ comment, postId, refetchPosts, postOwnerId }) {
+// Main Comment component - UPDATED WITH SEPARATE COUNTERS
+export default function PostComment({ comment: initialComment, postId, refetchPosts, postOwnerId }) {
   const currentUser = useSelector((state) => state.auth.user);
   const [showReply, setShowReply] = useState(false);
   const [replyText, setReplyText] = useState("");
   
-  const [voteComment] = useVoteCommentMutation();
+  const [voteComment, { isLoading: isVoting }] = useVoteCommentMutation();
   const [addReply] = useAddReplyMutation();
   const [deleteComment] = useDeleteCommentMutation();
 
-  const commentUser = getUserData(comment.user);
-  const isCommentOwner = isUserOwner(comment.user, currentUser);
-  const isPostOwner = postOwnerId && isUserOwner(comment.user, { _id: postOwnerId });
-  const netVotes = (comment.upvotes?.length || 0) - (comment.downvotes?.length || 0);
+  // Local state synced from prop
+  const [commentData, setCommentData] = useState(initialComment);
 
+  // Sync when parent updates
+  useEffect(() => {
+    setCommentData(initialComment);
+  }, [initialComment]);
+
+  const commentUser = getUserData(commentData.user);
+  const isCommentOwner = isUserOwner(commentData.user, currentUser);
+  const isPostOwner = postOwnerId && isUserOwner(commentData.user, { _id: postOwnerId });
+  
+  // 🔥 UPDATED: Get separate upvote and downvote counts
+  const upvoteCount = typeof commentData.upvotes === 'number' 
+    ? commentData.upvotes 
+    : (commentData.upvotes?.length || 0);
+  const downvoteCount = typeof commentData.downvotes === 'number' 
+    ? commentData.downvotes 
+    : (commentData.downvotes?.length || 0);
+
+  // Direct backend sync
   const handleVote = async (type) => {
-    if (!currentUser) return;
+    if (!currentUser || isVoting) return;
     
     try {
-      await voteComment({ postId, commentId: comment._id, type }).unwrap();
-      if (refetchPosts) refetchPosts();
+      // Call backend and wait for response
+      const response = await voteComment({ postId, commentId: commentData._id, type }).unwrap();
+      
+      // Update with EXACT backend data
+      if (response.comment) {
+        setCommentData(prevData => ({
+          ...prevData,
+          userVote: response.comment.userVote,
+          upvotes: response.comment.upvotes !== undefined ? response.comment.upvotes : prevData.upvotes,
+          downvotes: response.comment.downvotes !== undefined ? response.comment.downvotes : prevData.downvotes,
+          replies: response.comment.replies || prevData.replies // Keep replies if not in response
+        }));
+      } else if (response.post) {
+        // Some backends return the whole post with updated comment
+        const updatedComment = response.post.comments?.find(c => c._id === commentData._id);
+        if (updatedComment) {
+          setCommentData(prevData => ({
+            ...prevData,
+            userVote: updatedComment.userVote,
+            upvotes: updatedComment.upvotes !== undefined ? updatedComment.upvotes : prevData.upvotes,
+            downvotes: updatedComment.downvotes !== undefined ? updatedComment.downvotes : prevData.downvotes,
+            replies: updatedComment.replies || prevData.replies
+          }));
+        }
+      }
+      
+      // Optional: refetch to sync everything
+      if (refetchPosts) {
+        setTimeout(() => refetchPosts(), 100);
+      }
     } catch (error) {
       console.error('Vote comment failed:', error);
     }
@@ -166,9 +254,18 @@ export default function Comment({ comment, postId, refetchPosts, postOwnerId }) 
     if (!replyText.trim()) return;
     
     try {
-      await addReply({ postId, commentId: comment._id, text: replyText }).unwrap();
+      const response = await addReply({ postId, commentId: commentData._id, text: replyText }).unwrap();
       setReplyText("");
       setShowReply(false);
+      
+      // Update replies if response contains them
+      if (response.comment?.replies) {
+        setCommentData(prevData => ({
+          ...prevData,
+          replies: response.comment.replies
+        }));
+      }
+      
       if (refetchPosts) refetchPosts();
     } catch (error) {
       console.error('Add reply failed:', error);
@@ -179,7 +276,7 @@ export default function Comment({ comment, postId, refetchPosts, postOwnerId }) 
     if (!window.confirm('Are you sure you want to delete this comment?')) return;
     
     try {
-      await deleteComment({ postId, commentId: comment._id }).unwrap();
+      await deleteComment({ postId, commentId: commentData._id }).unwrap();
       if (refetchPosts) refetchPosts();
     } catch (error) {
       console.error('Delete comment failed:', error);
@@ -201,7 +298,7 @@ export default function Comment({ comment, postId, refetchPosts, postOwnerId }) 
             {commentUser.verified && <Badge variant="secondary" className="h-4 text-xs">Verified</Badge>}
             {isPostOwner && <Badge variant="outline" className="h-4 text-xs">OP</Badge>}
             <span className="text-xs text-gray-500">
-              {new Date(comment.createdAt).toLocaleDateString()}
+              {new Date(commentData.createdAt).toLocaleDateString()}
             </span>
           </div>
           
@@ -222,26 +319,31 @@ export default function Comment({ comment, postId, refetchPosts, postOwnerId }) 
           )}
         </div>
         
-        <p className="mb-2 text-sm">{comment.text}</p>
+        <p className="mb-2 text-sm">{commentData.text}</p>
         
+        {/* 🔥 UPDATED: Separate vote counters display */}
         <div className="flex items-center gap-4 text-xs text-gray-500">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
-              className={`h-6 px-1 ${comment.userVote === "upvote" ? "text-green-600" : ""}`}
+              className={`h-6 px-1 gap-1 ${commentData.userVote === "upvote" ? "text-green-600" : ""}`}
               onClick={() => handleVote("upvote")}
+              disabled={isVoting || !currentUser}
             >
-              <ChevronUp className="w-3 h-3" />
+              {isVoting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronUp className="w-3 h-3" />}
+              <span className={isVoting ? "opacity-50" : ""}>{upvoteCount}</span>
             </Button>
-            <span>{netVotes}</span>
+            
             <Button
               variant="ghost"
               size="sm"
-              className={`h-6 px-1 ${comment.userVote === "downvote" ? "text-red-600" : ""}`}
+              className={`h-6 px-1 gap-1 ${commentData.userVote === "downvote" ? "text-red-600" : ""}`}
               onClick={() => handleVote("downvote")}
+              disabled={isVoting || !currentUser}
             >
-              <ChevronDown className="w-3 h-3" />
+              {isVoting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronDown className="w-3 h-3" />}
+              <span className={isVoting ? "opacity-50" : ""}>{downvoteCount}</span>
             </Button>
           </div>
           
@@ -277,14 +379,14 @@ export default function Comment({ comment, postId, refetchPosts, postOwnerId }) 
         )}
 
         {/* Replies */}
-        {comment.replies && comment.replies.length > 0 && (
+        {commentData.replies && commentData.replies.length > 0 && (
           <div className="pl-4 mt-3 space-y-3 border-l-2 border-gray-200">
-            {comment.replies.map((reply) => (
+            {commentData.replies.map((reply) => (
               <ReplyComment 
                 key={reply._id} 
                 reply={reply} 
                 postId={postId} 
-                commentId={comment._id}
+                commentId={commentData._id}
                 refetchPosts={refetchPosts}
               />
             ))}

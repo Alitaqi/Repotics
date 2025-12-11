@@ -12,16 +12,22 @@ import ReportWizard from "@/components/layout/ReportWizard";
 import { AlertTriangle, Search, User, Home, Map, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useGetMeQuery } from "@/lib/redux/api/authApi"; // ✅ ensure this import exists
+import { useGetMeQuery } from "@/lib/redux/api/authApi";
+import MissingPersonModal from "@/components/layout/MissingPersonModal";
+import { useDispatch } from "react-redux";
+import { openModal } from "@/lib/redux/slices/missingPersonSlice";
+
 
 export default function Feed() {
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth.user);
+  const dispatch = useDispatch();
 
-  // ✅ Fetch logged-in user (fallback to API if not in Redux)
-  const { data: meData } = useGetMeQuery(undefined, { skip: !!currentUser });
+ //const { data: meData } = useGetMeQuery(undefined, { skip: !!currentUser });
+  const { data: meData, isFetching: meLoading } = useGetMeQuery();
+
   const user = currentUser || meData?.user || null;
-
+// const user = meData?.user || currentUser || null;
   const [cursor, setCursor] = useState(null);
   const [open, setOpen] = useState(false);
   const { data, isFetching, refetch } = useGetPersonalizedFeedQuery(
@@ -39,14 +45,17 @@ export default function Feed() {
   const handleProfileClick = () => {
     if (user?.username) navigate(`/profile/${user.username}`);
   };
-  console.log("Feed posts data:", posts); //del me
+
+  const handleReportMissingPerson = () => {
+    dispatch(openModal());
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex flex-col lg:flex-row justify-center gap-6 px-4 md:px-6 py-4 max-w-[1440px] mx-auto w-full">
         {/* Left Sidebar */}
         <div className="sticky self-start hidden lg:block w-80 shrink-0 top-18 h-fit">
-          <ProfileCard />
+          <ProfileCard user={user} />
 
           {/* Navigation Box */}
           <Card className="mt-6">
@@ -55,7 +64,6 @@ export default function Feed() {
                 Navigation
               </CardTitle>
               <div className="flex flex-col">
-                {/* ✅ Dynamic Profile Link */}
                 <button
                   onClick={handleProfileClick}
                   className="flex items-center gap-3 px-2 py-2 text-sm font-medium text-left text-gray-700 rounded-md hover:bg-gray-100 hover:text-blue-600 hover:cursor-pointer"
@@ -102,7 +110,10 @@ export default function Feed() {
                   <AlertTriangle className="w-5 h-5 mr-2" />
                   Report a Crime
                 </Button>
-                <Button className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  className="py-6 text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700" 
+                  onClick={handleReportMissingPerson}
+                >
                   <Search className="w-5 h-5 mr-2" />
                   Report Missing Person
                 </Button>
@@ -139,15 +150,13 @@ export default function Feed() {
             >
               <div className="space-y-6">
                 {posts.map((post) => {
-                  // ✅ Create a safe copy of post data
                   const postData = { ...post };
 
-                  // ✅ If the post is anonymous, replace user info
                   if (postData.anonymous) {
                     postData.user = {
                       name: "Anonymous User",
                       username: "anonymous",
-                      profilePicture: "https://res.cloudinary.com/dd7mk4do3/image/upload/v1755870214/aa_pkajlu.jpg", // you can place a default image in your public folder
+                      profilePicture: "https://res.cloudinary.com/dd7mk4do3/image/upload/v1755870214/aa_pkajlu.jpg",
                     };
                   }
 
@@ -166,6 +175,9 @@ export default function Feed() {
 
       {/* Report Wizard */}
       <ReportWizard open={open} onOpenChange={setOpen} onPostCreated={refetch} />
+      
+      {/* ✅ ADD THIS: Missing Person Modal */}
+      <MissingPersonModal />
     </div>
   );
 }
