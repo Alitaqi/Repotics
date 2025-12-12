@@ -1,11 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const baseUrl = `${import.meta.env.VITE_API_BASE_URL}/api`;
+const baseUrl = `${import.meta.env.VITE_API_BASE_URL}/api/missing-persons`;
 
 export const missingPersonsApi = createApi({
   reducerPath: 'missingPersonsApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${baseUrl}/missing-persons`,
+    baseUrl,
     credentials: 'include',
     prepareHeaders: (headers) => {
       // Cookies will be sent automatically with credentials: 'include'
