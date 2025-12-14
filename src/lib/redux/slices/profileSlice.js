@@ -99,6 +99,11 @@ const profileSlice = createSlice({
         }
       }
     },
+    updateFollowerFollowStatus (state, action) {
+      const { followerId, isFollowing } = action.payload;
+      const follower = state.user.followers.find(f => f._id === followerId);
+      if (follower) follower.isFollowing = isFollowing;
+    },
   },
 });
 
@@ -116,6 +121,7 @@ export const {
   incrementFollowerCount,
   decrementFollowerCount,
   updateFollower,
+  updateFollowerFollowStatus,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

@@ -22,7 +22,8 @@ import {
   unfollow, 
   setFollowStatus, 
   incrementFollowerCount, 
-  decrementFollowerCount 
+  decrementFollowerCount,
+  updateFollowerFollowStatus
 } from "@/lib/redux/slices/profileSlice";
 import { 
   useGetProfileQuery, 
@@ -559,7 +560,7 @@ export default function Profile() {
                   <Link
                     key={u._id}
                     to={`/profile/${u.username}`}
-                    className="flex flex-col items-center hover:opacity-80 transition"
+                    className="flex flex-col items-center transition hover:opacity-80"
                   >
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={u.profilePicture} />
@@ -673,21 +674,27 @@ export default function Profile() {
                   </div>
                   {/* Only show follow button if not the current user */}
                   {currentUser && currentUser.username !== follower.username && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await followUser(follower.username).unwrap();
-                        dispatch(setFollowStatus(true)); // optional: update Redux if needed
-                        // optionally update the followers list locally
-                      } catch (err) {
-                        console.error("Failed to follow user:", err);
-                      }
-                    }}
-                  >
-                    Follow
-                  </Button>
+                 <Button
+  size="sm"
+  variant={follower.isFollowing ? "outline" : "default"}
+  onClick={async () => {
+    try {
+      if (follower.isFollowing) {
+        await unfollowUser(follower.username).unwrap();
+        dispatch(updateFollowerFollowStatus({ followerId: follower._id, isFollowing: false }));
+      } else {
+        await followUser(follower.username).unwrap();
+        dispatch(updateFollowerFollowStatus({ followerId: follower._id, isFollowing: true }));
+      }
+      await refetchProfile();
+    } catch (err) {
+      console.error("Failed to follow/unfollow user:", err);
+    }
+  }}
+>
+  {follower.isFollowing ? "Followed" : "Follow"}
+</Button>
+
                 )}
 
                 </div>
@@ -729,12 +736,22 @@ export default function Profile() {
                   {/* Only show unfollow button for owner */}
                   {isOwner && (
                     <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleUnfollow(followedUser.username)}
-                    >
-                      Unfollow
-                    </Button>
+  size="sm"
+  variant="destructive"
+  onClick={async () => {
+    try {
+      await unfollowUser(followedUser.username).unwrap();
+      dispatch(unfollow(followedUser._id));
+      followedUser.isFollowing = false; // locally update
+    } catch (err) {
+      console.error("Failed to unfollow user:", err);
+    }
+    await refetchProfile();
+  }}
+>
+  {followedUser.isFollowing ? "Unfollow" : "Follow"}
+</Button>
+
                   )}
                 </div>
               ))

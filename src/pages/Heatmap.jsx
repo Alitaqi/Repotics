@@ -28,8 +28,7 @@ const TIME_FILTERS = {
   "24h": "Last 24 Hours",
   "week": "Last Week",
   "month": "Last Month",
-  "3months": "Last 3 Months",
-  "custom": "Custom Date"
+  "3months": "Last 3 Months"
 };
 
 function SimplePostView({ post }) {
@@ -117,13 +116,25 @@ export default function HeatmapPage() {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const [mapInitialized, setMapInitialized] = useState(false);
-  const [city, setCity] = useState("");
-  const [crimeType, setCrimeType] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  
+  // UI State (what the user sees in the form)
+  const [uiCity, setUiCity] = useState("");
+  const [uiCrimeType, setUiCrimeType] = useState("");
+  const [uiStartDate, setUiStartDate] = useState("");
+  const [uiEndDate, setUiEndDate] = useState("");
+  
+  // Applied State (what's actually being used for the query)
+  const [appliedFilters, setAppliedFilters] = useState({
+    city: "",
+    type: "",
+    startDate: "",
+    endDate: ""
+  });
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTimeFilter, setActiveTimeFilter] = useState("3months");
   const [selectedPostId, setSelectedPostId] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const getDateRange = (filterType) => {
     const end = new Date();
@@ -134,7 +145,7 @@ export default function HeatmapPage() {
       case "week": start.setDate(start.getDate() - 7); break;
       case "month": start.setMonth(start.getMonth() - 1); break;
       case "3months": start.setMonth(start.getMonth() - 3); break;
-      case "custom": return { startDate: startDate || "", endDate: endDate || "" };
+      case "custom": return { startDate: uiStartDate || "", endDate: uiEndDate || "" };
       default: start.setMonth(start.getMonth() - 3);
     }
    
@@ -146,29 +157,55 @@ export default function HeatmapPage() {
 
   const handleTimeFilter = (filterType) => {
     setActiveTimeFilter(filterType);
+    setHasUnsavedChanges(true);
    
     if (filterType !== "custom") {
       const { startDate: newStartDate, endDate: newEndDate } = getDateRange(filterType);
-      setStartDate(newStartDate);
-      setEndDate(newEndDate);
+      setUiStartDate(newStartDate);
+      setUiEndDate(newEndDate);
     }
   };
 
   useEffect(() => {
-    if (!startDate && !endDate) {
+    if (!uiStartDate && !uiEndDate) {
       const { startDate: initialStart, endDate: initialEnd } = getDateRange("3months");
-      setStartDate(initialStart);
-      setEndDate(initialEnd);
+      setUiStartDate(initialStart);
+      setUiEndDate(initialEnd);
+      // Set initial applied filters
+      setAppliedFilters({
+        city: "",
+        type: "",
+        startDate: initialStart,
+        endDate: initialEnd
+      });
     }
   }, []);
 
-  const filters = { city, type: crimeType, startDate, endDate };
-  const { data, isFetching, refetch } = useGetHeatmapDataQuery(filters, { skip: false });
+  // Use appliedFilters for the query, not the UI state
+  const { data, isFetching, refetch } = useGetHeatmapDataQuery(appliedFilters, { skip: false });
 
   // eslint-disable-next-line no-unused-vars
   const { data: selectedPost, isLoading: postLoading } = useGetPostByIdQuery(selectedPostId, { 
     skip: !selectedPostId 
   });
+
+  // Check for unsaved changes
+  useEffect(() => {
+    const currentUiFilters = {
+      city: uiCity,
+      type: uiCrimeType,
+      startDate: uiStartDate,
+      endDate: uiEndDate
+    };
+    
+    const hasChanges = 
+      currentUiFilters.city !== appliedFilters.city ||
+      currentUiFilters.type !== appliedFilters.type ||
+      currentUiFilters.startDate !== appliedFilters.startDate ||
+      currentUiFilters.endDate !== appliedFilters.endDate;
+    
+    setHasUnsavedChanges(hasChanges);
+  }, [uiCity, uiCrimeType, uiStartDate, uiEndDate, appliedFilters]);
 
   // Initialize Map
   useEffect(() => {
@@ -385,18 +422,28 @@ export default function HeatmapPage() {
     return () => window.removeEventListener('orientationchange', handleOrientationChange);
   }, []);
 
-  const handleFilter = (e) => {
+  const handleApplyFilters = (e) => {
     e.preventDefault();
+    // Apply the UI filters to the actual query
+    setAppliedFilters({
+      city: uiCity,
+      type: uiCrimeType,
+      startDate: uiStartDate,
+      endDate: uiEndDate
+    });
+    // Refetch with new filters
     refetch();
+    setHasUnsavedChanges(false);
   };
 
   const clearFilters = () => {
-    setCity("");
-    setCrimeType("");
+    setUiCity("");
+    setUiCrimeType("");
     setActiveTimeFilter("3months");
     const { startDate: defaultStart, endDate: defaultEnd } = getDateRange("3months");
-    setStartDate(defaultStart);
-    setEndDate(defaultEnd);
+    setUiStartDate(defaultStart);
+    setUiEndDate(defaultEnd);
+    setHasUnsavedChanges(true);
   };
 
   const handleClosePost = () => {
@@ -426,6 +473,12 @@ export default function HeatmapPage() {
                 </Button>
               </div>
               <p className="text-sm text-gray-500">Refine your heatmap view</p>
+              {hasUnsavedChanges && (
+                <div className="flex items-center gap-1 mt-2 text-xs font-medium text-blue-600">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  Unsaved filter changes
+                </div>
+              )}
             </div>
 
             {/* Time Filter Buttons */}
@@ -454,7 +507,7 @@ export default function HeatmapPage() {
               </div>
             </div>
 
-            <form onSubmit={handleFilter} className="flex flex-col flex-1 gap-0 p-6 overflow-y-auto">
+            <form onSubmit={handleApplyFilters} className="flex flex-col flex-1 gap-0 p-6 overflow-y-auto">
               <div className="mb-6 space-y-1">
                 <label className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
                   <MapPin className="w-4 h-4 text-red-500" />
@@ -462,8 +515,11 @@ export default function HeatmapPage() {
                 </label>
                 <Input
                   placeholder="e.g. Islamabad"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  value={uiCity}
+                  onChange={(e) => {
+                    setUiCity(e.target.value);
+                    setHasUnsavedChanges(true);
+                  }}
                   className="w-full pl-10 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-200 rounded-xl"
                 />
               </div>
@@ -473,7 +529,13 @@ export default function HeatmapPage() {
                   <Shield className="w-4 h-4 text-blue-500" />
                   Crime Type
                 </label>
-                <Select value={crimeType} onValueChange={setCrimeType}>
+                <Select 
+                  value={uiCrimeType} 
+                  onValueChange={(value) => {
+                    setUiCrimeType(value);
+                    setHasUnsavedChanges(true);
+                  }}
+                >
                   <SelectTrigger className="w-full h-12 px-3 py-2 bg-white border border-gray-200 shadow-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <SelectValue placeholder="All Crime Types" />
                   </SelectTrigger>
@@ -496,10 +558,11 @@ export default function HeatmapPage() {
                   <div className="relative">
                     <Input
                       type="date"
-                      value={startDate}
+                      value={uiStartDate}
                       onChange={(e) => {
-                        setStartDate(e.target.value);
+                        setUiStartDate(e.target.value);
                         setActiveTimeFilter("custom");
+                        setHasUnsavedChanges(true);
                       }}
                       className="w-full pl-10 bg-white border-gray-200 focus:border-green-500 focus:ring-green-200 rounded-xl"
                     />
@@ -508,10 +571,11 @@ export default function HeatmapPage() {
                   <div className="relative">
                     <Input
                       type="date"
-                      value={endDate}
+                      value={uiEndDate}
                       onChange={(e) => {
-                        setEndDate(e.target.value);
+                        setUiEndDate(e.target.value);
                         setActiveTimeFilter("custom");
+                        setHasUnsavedChanges(true);
                       }}
                       className="w-full pl-10 bg-white border-gray-200 focus:border-green-500 focus:ring-green-200 rounded-xl"
                     />
@@ -532,8 +596,12 @@ export default function HeatmapPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
-                  disabled={isFetching}
+                  className={`flex-1 bg-gradient-to-r font-medium px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 ${
+                    hasUnsavedChanges 
+                      ? "from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white" 
+                      : "from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-700 cursor-not-allowed"
+                  }`}
+                  disabled={isFetching || !hasUnsavedChanges}
                 >
                   {isFetching ? "Applying..." : "Apply Filters"}
                 </Button>
@@ -558,6 +626,9 @@ export default function HeatmapPage() {
           size="sm"
         >
           <Filter className="w-5 h-5" />
+          {hasUnsavedChanges && (
+            <span className="absolute w-3 h-3 bg-red-500 rounded-full -top-1 -right-1 animate-pulse"></span>
+          )}
         </Button>
 
         {/* Loading indicator */}

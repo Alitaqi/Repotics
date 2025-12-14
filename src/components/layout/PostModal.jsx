@@ -64,11 +64,19 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
   const [showComments, setShowComments] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [comments, setComments] = useState([]);
+  
+  // 🔥 Single source of truth for post data
+  const [postData, setPostData] = useState(post);
+  
   const [addComment, { isLoading: isAdding }] = useAddCommentMutation();
   const [upvotePost, { isLoading: isUpvoting }] = useUpvotePostMutation();
   const [downvotePost, { isLoading: isDownvoting }] = useDownvotePostMutation();
-  const [userVote, setUserVote] = useState(post?.userVote || null);
   const navigate = useNavigate();
+
+  // Sync postData when post prop changes
+  useEffect(() => {
+    setPostData(post);
+  }, [post]);
 
   // Initialize comments when post changes
   useEffect(() => {
@@ -80,9 +88,16 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
     }
   }, [post]);
 
-  if (!post) return null;
+  //if (!post) return null;
+  if (!post || !postData) return null;
 
-  const netVotes = (post.upvotes?.length || 0) - (post.downvotes?.length || 0);
+  // 🔥 UPDATED: Get separate upvote and downvote counts
+  const upvoteCount = typeof postData.upvotes === 'number' 
+    ? postData.upvotes 
+    : (postData.upvotes?.length || 0);
+  const downvoteCount = typeof postData.downvotes === 'number' 
+    ? postData.downvotes 
+    : (postData.downvotes?.length || 0);
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !currentUser) return;
@@ -110,7 +125,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
     setNewComment("");
 
     try {
-      await addComment({ postId: post._id, text: newComment }).unwrap();
+      await addComment({ postId: postData._id, text: newComment }).unwrap();
       // Refetch to get the actual comment with proper ID
       if (refetchPosts) refetchPosts();
     } catch (err) {
@@ -120,33 +135,45 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
     }
   };
 
+  // 🔥 UPDATED: Voting with separate counters
   const handleVote = async (type) => {
     if (!currentUser) return;
-    const prevVote = userVote;
-    setUserVote(prevVote === type ? null : type);
+
     try {
-      if (type === "upvote") await upvotePost(post._id).unwrap();
-      else await downvotePost(post._id).unwrap();
+      let response;
+      if (type === 'upvote') {
+        response = await upvotePost(postData._id).unwrap();
+      } else {
+        response = await downvotePost(postData._id).unwrap();
+      }
+      
+      // 🔥 Update with server response - separate counters
+      setPostData(prevData => ({
+        ...prevData,
+        userVote: response.userVote,
+        upvotes: response.upvotes !== undefined ? response.upvotes : prevData.upvotes,
+        downvotes: response.downvotes !== undefined ? response.downvotes : prevData.downvotes
+      }));
+      
       if (refetchPosts) refetchPosts();
     } catch (err) {
-      console.error("Vote failed:", err);
-      setUserVote(prevVote);
+      console.error('Vote failed:', err);
     }
   };
 
   const handleProfileClick = () => {
-    if (post.user?.username) navigate(`/profile/${post.user.username}`);
+    if (postData.user?.username) navigate(`/profile/${postData.user.username}`);
   };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
-      prev === post.images.length - 1 ? 0 : prev + 1
+      prev === postData.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
     setCurrentImageIndex((prev) =>
-      prev === 0 ? post.images.length - 1 : prev - 1
+      prev === 0 ? postData.images.length - 1 : prev - 1
     );
   };
 
@@ -155,14 +182,14 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
       <DialogContent className="p-0 overflow-hidden sm:max-w-5xl md:max-h-[90vh] h-[90vh] flex flex-col md:flex-row rounded-2xl border-none">
         {/* LEFT: Image Slider */}
         <div className="relative flex items-center justify-center w-full bg-black md:w-1/2">
-          {post.images?.length > 0 ? (
+          {postData.images?.length > 0 ? (
             <>
               <img
-                src={post.images[currentImageIndex]}
+                src={postData.images[currentImageIndex]}
                 alt="post"
                 className="object-contain w-full h-full"
               />
-              {post.images.length > 1 && (
+              {postData.images.length > 1 && (
                 <>
                   <button
                     onClick={prevImage}
@@ -195,50 +222,64 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
             >
               <Avatar>
                 <AvatarImage
-                  src={post.user?.profilePicture || "/default-avatar.png"}
+                  src={postData.user?.profilePicture || "/default-avatar.png"}
                 />
-                <AvatarFallback>{post.user?.name?.[0] || "U"}</AvatarFallback>
+                <AvatarFallback>{postData.user?.name?.[0] || "U"}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{post.user?.name}</h3>
-                  {post.user?.verified && (
+                  <h3 className="font-semibold">{postData.user?.name}</h3>
+                  {postData.user?.verified && (
                     <CheckCircle2 className="w-4 h-4 text-blue-500" />
                   )}
-                  {post.crimeType && (
-                    <Badge variant="secondary">{post.crimeType}</Badge>
+                  {postData.crimeType && (
+                    <Badge variant="secondary">{postData.crimeType}</Badge>
                   )}
                 </div>
                 <p className="text-xs text-gray-500">
-                  @{post.user?.username} •{" "}
-                  {new Date(post.createdAt).toLocaleString()}
+                  @{postData.user?.username} •{" "}
+                  {new Date(postData.createdAt).toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
           {/* Description */}
           <div className="py-3 text-sm whitespace-pre-line">
-            {post.description}
+            {postData.description}
           </div>
           {/* Hashtags */}
-          {post.hashtags?.length > 0 && (
+          {postData.hashtags?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {post.hashtags.map((tag, i) => (
+              {postData.hashtags.map((tag, i) => (
                 <Badge key={i} variant="outline">
                   {tag}
                 </Badge>
               ))}
             </div>
           )}
-          {/* Votes */}
-          <div className="flex items-center justify-around py-2 border-y">
+
+          {/* 🔥 UPDATED: Separate vote counters display */}
+          <div className="flex items-center justify-between py-2 text-sm text-gray-500 border-y">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <ChevronUp className="w-4 h-4 text-green-600" />
+                {upvoteCount} upvotes
+              </span>
+              <span className="flex items-center gap-1">
+                <ChevronDown className="w-4 h-4 text-red-600" />
+                {downvoteCount} downvotes
+              </span>
+            </div>
+            <span>{comments.length} comments</span>
+          </div>
+
+          {/* 🔥 UPDATED: Vote Buttons with colors */}
+          <div className="flex justify-around py-2 border-b">
             <Button
               variant="ghost"
+              className={`flex items-center gap-1 ${postData.userVote === "upvote" ? "text-green-600" : ""}`}
               onClick={() => handleVote("upvote")}
               disabled={isUpvoting || isDownvoting || !currentUser}
-              className={`flex items-center gap-1 ${
-                userVote === "upvote" ? "text-green-600" : ""
-              }`}
             >
               {isUpvoting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -247,14 +288,12 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
               )}
               Upvote
             </Button>
-            <span className="text-sm text-gray-500">{netVotes} votes</span>
+
             <Button
               variant="ghost"
+              className={`flex items-center gap-1 ${postData.userVote === "downvote" ? "text-red-600" : ""}`}
               onClick={() => handleVote("downvote")}
               disabled={isUpvoting || isDownvoting || !currentUser}
-              className={`flex items-center gap-1 ${
-                userVote === "downvote" ? "text-red-600" : ""
-              }`}
             >
               {isDownvoting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -264,12 +303,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
               Downvote
             </Button>
           </div>
-          {/* Comments Count */}
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-gray-500">
-              {comments.length} comments
-            </span>
-          </div>
+
           {/* Comments */}
           <div className="flex-1 mt-2 overflow-y-auto">
             {showComments && (
@@ -279,8 +313,8 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                     <PostComment
                       key={comment._id}
                       comment={comment}
-                      postId={post._id}
-                      postOwnerId={post.user?._id}
+                      postId={postData._id}
+                      postOwnerId={postData.user?._id}
                       refetchPosts={refetchPosts}
                     />
                   ))
