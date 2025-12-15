@@ -8,8 +8,7 @@ export const missingPersonsApi = createApi({
     baseUrl,
     credentials: 'include',
     prepareHeaders: (headers) => {
-      // Cookies will be sent automatically with credentials: 'include'
-      // Note: Don't set Content-Type for FormData - browser will set it automatically with boundary
+      
       return headers;
     },
   }),
@@ -34,7 +33,7 @@ export const missingPersonsApi = createApi({
         url: '/',
         method: 'POST',
         body: data,
-        // ✅ FormData will be sent as-is, browser handles Content-Type
+        // FormData will be sent as-is, browser handles Content-Type
       }),
       invalidatesTags: ['MissingPerson'],
     }),

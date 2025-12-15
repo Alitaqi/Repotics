@@ -12,7 +12,7 @@ export default function PostApproval({
   onApprove, 
   onClose, 
   postData, 
-  aiGeneratedSummary, // Add this prop
+  aiGeneratedSummary, 
   isLoading 
 }) {
   const dispatch = useDispatch();

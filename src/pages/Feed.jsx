@@ -176,7 +176,7 @@ export default function Feed() {
       {/* Report Wizard */}
       <ReportWizard open={open} onOpenChange={setOpen} onPostCreated={refetch} />
       
-      {/* ✅ ADD THIS: Missing Person Modal */}
+      {/*  Missing Person Modal */}
       <MissingPersonModal />
     </div>
   );

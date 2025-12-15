@@ -6,7 +6,7 @@ import Cropper from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-// 🔥 NEW: Convert File to base64 string
+// Convert File to base64 string
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -16,7 +16,7 @@ const fileToBase64 = (file) => {
   });
 };
 
-// 🔥 UPDATED: Now works with base64 strings
+// Now works with base64 strings
 const getCroppedImg = async (imageSrc, _crop, _zoom, _aspect, croppedAreaPixels) => {
   const image = new Image();
   image.src = imageSrc; // Can be base64 or blob URL
@@ -39,7 +39,7 @@ const getCroppedImg = async (imageSrc, _crop, _zoom, _aspect, croppedAreaPixels)
     canvas.height
   );
 
-  // 🔥 Return base64 instead of blob URL
+  // Return base64 instead of blob URL
   return canvas.toDataURL("image/jpeg", 0.9);
 };
 
@@ -59,13 +59,13 @@ export default function ImageStep({ files, setFiles }) {
 
   const active = useMemo(() => images[current]?.url, [images, current]);
 
-  // 🔥 UPDATED: Convert files to base64 before storing
+  // Convert files to base64 before storing
   const handleFiles = async (fileList) => {
     const arr = Array.from(fileList || []);
     
     // Convert all files to base64
     const base64Promises = arr.map(async (f) => ({
-      url: await fileToBase64(f), // 🔥 Store as base64
+      url: await fileToBase64(f), // Store as base64
       name: f.name,
     }));
     
@@ -92,7 +92,7 @@ export default function ImageStep({ files, setFiles }) {
     const original = originals[current];
     if (!original || !croppedAreaPixels) return;
     
-    // 🔥 getCroppedImg now returns base64
+    // getCroppedImg now returns base64
     const croppedBase64 = await getCroppedImg(
       original.url, 
       crop, 
@@ -136,7 +136,7 @@ export default function ImageStep({ files, setFiles }) {
     setCurrent((idx) => Math.min(idx, nextImages.length - 1));
   };
 
-  // 🔥 REMOVED: No need to revoke blob URLs anymore since we use base64
+  // REMOVED: No need to revoke blob URLs anymore since we use base64
   // useEffect cleanup is no longer needed
 
   return (

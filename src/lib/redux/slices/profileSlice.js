@@ -6,7 +6,7 @@ const initialState = {
     bannerImage: null,
     profileImage: null,
   },
-    isOwner: false,// idk gpt somewaht recomeneded this
+    isOwner: false,
 };
 
 const profileSlice = createSlice({
@@ -112,8 +112,8 @@ export const {
   setBio,
   setBannerImage,
   setProfileImage,
-  replaceBannerImage,   // ✅ new
-  replaceProfileImage,  // ✅ new
+  replaceBannerImage,   
+  replaceProfileImage,  
   setUserField,
   unfollow,
   follow,

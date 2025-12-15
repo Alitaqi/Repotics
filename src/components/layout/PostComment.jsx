@@ -59,7 +59,7 @@ function ReplyComment({ reply: initialReply, postId, commentId, refetchPosts }) 
   const replyUser = getUserData(replyData.user);
   const isReplyOwner = isUserOwner(replyData.user, currentUser);
   
-  // 🔥 UPDATED: Get separate upvote and downvote counts
+  // Get separate upvote and downvote counts
   const upvoteCount = typeof replyData.upvotes === 'number' 
     ? replyData.upvotes 
     : (replyData.upvotes?.length || 0);
@@ -151,7 +151,7 @@ function ReplyComment({ reply: initialReply, postId, commentId, refetchPosts }) 
         
         <p className="mb-1 text-xs">{replyData.text}</p>
         
-        {/* 🔥 UPDATED: Separate vote counters display */}
+        {/* Separate vote counters display */}
         <div className="flex items-center gap-3 text-xs text-gray-500">
           <Button
             variant="ghost"
@@ -202,7 +202,7 @@ export default function PostComment({ comment: initialComment, postId, refetchPo
   const isCommentOwner = isUserOwner(commentData.user, currentUser);
   const isPostOwner = postOwnerId && isUserOwner(commentData.user, { _id: postOwnerId });
   
-  // 🔥 UPDATED: Get separate upvote and downvote counts
+  // Get separate upvote and downvote counts
   const upvoteCount = typeof commentData.upvotes === 'number' 
     ? commentData.upvotes 
     : (commentData.upvotes?.length || 0);
@@ -321,7 +321,7 @@ export default function PostComment({ comment: initialComment, postId, refetchPo
         
         <p className="mb-2 text-sm">{commentData.text}</p>
         
-        {/* 🔥 UPDATED: Separate vote counters display */}
+        {/* Separate vote counters display */}
         <div className="flex items-center gap-4 text-xs text-gray-500">
           <div className="flex items-center gap-2">
             <Button

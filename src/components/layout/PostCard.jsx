@@ -50,7 +50,7 @@ export default function PostCard({ post, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
   const isOwner = currentUser && post.user?._id === currentUser._id;
 
-  // 🔥 Single source of truth for post data
+  // Single source of truth for post data
   const [postData, setPostData] = useState(post);
 
   // Sync postData when post prop changes (e.g., after refetch)
@@ -116,7 +116,7 @@ export default function PostCard({ post, refetchPosts }) {
     setIsImageViewerOpen(false);
   };
 
-  // 🔥 UPDATED: Voting with separate counters
+  // Voting with separate counters
   const [upvotePost, { isLoading: isUpvoting }] = useUpvotePostMutation();
   const [downvotePost, { isLoading: isDownvoting }] = useDownvotePostMutation();
 
@@ -131,7 +131,7 @@ export default function PostCard({ post, refetchPosts }) {
         response = await downvotePost(postData._id).unwrap();
       }
       
-      // 🔥 Update with server response - separate counters
+      // Update with server response - separate counters
       setPostData(prevData => ({
         ...prevData,
         userVote: response.userVote,
@@ -217,7 +217,7 @@ export default function PostCard({ post, refetchPosts }) {
     }
   };
 
-  // 🔥 UPDATED: Get separate upvote and downvote counts
+  // Get separate upvote and downvote counts
   const upvoteCount = typeof postData.upvotes === 'number' 
     ? postData.upvotes 
     : (postData.upvotes?.length || 0);
@@ -345,7 +345,7 @@ export default function PostCard({ post, refetchPosts }) {
             </div>
           )}
 
-          {/* 🔥 UPDATED: Separate vote counters display */}
+          {/* Separate vote counters display */}
           <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">

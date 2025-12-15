@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 
 export default function ProfileCard({ user }) {
 
-  // 🔥 If user not loaded yet (first render)
+  // If user not loaded yet (first render)
   if (!user) {
     return (
       <Card className="w-full overflow-hidden shadow-md rounded-2xl">

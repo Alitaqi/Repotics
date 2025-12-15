@@ -623,10 +623,10 @@ export default function Profile() {
                   ) : postsData && postsData.length > 0 ? (
                      postsData
                       .filter((post) => {
-                        // ✅ Show all posts if it's your own profile
+                        //  Show all posts if it's your own profile
                         if (isOwner) return true;
 
-                        // ✅ Otherwise, hide anonymous posts
+                        //  Otherwise, hide anonymous posts
                         return !post.anonymous;
                       })
                       .map((post) => (

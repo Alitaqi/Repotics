@@ -17,7 +17,7 @@ import { useCreateReportMutation, useFinalizeReportMutation } from "@/lib/redux/
 
 const STORAGE_KEY = "reportDraft";
 
-// 🔥 NEW: Convert base64 string back to File object
+// Convert base64 string back to File object
 const base64ToFile = async (base64String, filename) => {
   const response = await fetch(base64String);
   const blob = await response.blob();
@@ -46,7 +46,7 @@ export default function ReportWizard({ open, onOpenChange, onPostCreated }) {
           const parsed = JSON.parse(raw);
           dispatch(hydrateFromStorage(parsed));
           
-          // 🔥 NEW: Restore files array from base64 images
+          //  Restore files array from base64 images
           // This ensures the files state stays in sync with Redux
           if (parsed.images && parsed.images.length > 0) {
             const restoredFiles = parsed.images.map((img) => ({
@@ -139,7 +139,7 @@ export default function ReportWizard({ open, onOpenChange, onPostCreated }) {
     }
   };
 
-  // 🔥 UPDATED: Convert base64 back to Files before submitting
+  // UPDATED: Convert base64 back to Files before submitting
   const handleSubmitFromDetailsStep = async () => {
     dispatch(setPostApprovalLoading(true));
     
@@ -157,7 +157,7 @@ export default function ReportWizard({ open, onOpenChange, onPostCreated }) {
       formData.append("anonymous", draft.anonymous);
       formData.append("agreed", draft.agreed);
 
-      // 🔥 Convert base64 images back to File objects
+      // Convert base64 images back to File objects
       const imageFiles = await Promise.all(
         draft.images.map((img) => base64ToFile(img.url, img.name))
       );
@@ -204,7 +204,7 @@ export default function ReportWizard({ open, onOpenChange, onPostCreated }) {
     dispatch(setPostApprovalOpen(false));
     setSubmittedData(null);
     setAiGeneratedSummary("");
-    setFiles([]); // 🔥 Clear files array
+    setFiles([]); 
     handleClose(false);
   };
 

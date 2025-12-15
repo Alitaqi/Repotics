@@ -12,7 +12,7 @@ export const authApi = createApi({
       headers.set("Content-Type", "application/json");
       return headers;
     },
-    credentials: "include", // sends cookies (JWT)
+    credentials: "include", 
   }),
   endpoints: (builder) => ({
     registerUser: builder.mutation({
@@ -33,11 +33,11 @@ export const authApi = createApi({
       query: () => ({
         url: "/logout",
         method: "POST",
-        credentials: "include", // needed to clear cookie
+        credentials: "include", 
       }),
     }),
     getMe: builder.query({
-      query: () => "/me", // calls your backend /me endpoint
+      query: () => "/me", 
     }),
   }),
 });

@@ -9,7 +9,7 @@ export const profileApi = createApi({
     baseUrl,
     credentials: "include",
    }), 
-  tagTypes: ['Profile'], // Add this for cache invalidation
+  tagTypes: ['Profile'], 
   endpoints: (builder) => ({
     getProfile: builder.query({
       query: (username) => `/users/profile/${username}`,
@@ -52,7 +52,7 @@ export const profileApi = createApi({
         { type: 'Profile', id: 'me' } 
       ],
     }),
-   // 🔹 NEW: Update Profile Picture
+   // Update Profile Picture
     updateProfilePicture: builder.mutation({
       query: (formData) => ({
         url: `/users/profile/update-profile-picture`,
@@ -62,7 +62,7 @@ export const profileApi = createApi({
       invalidatesTags: [{ type: 'Profile' }],
     }),
 
-    // 🔹 NEW: Update Banner Picture
+    //  Update Banner Picture
     updateBannerPicture: builder.mutation({
       query: (formData) => ({
         url: `/users/profile/update-banner-picture`,
@@ -72,7 +72,7 @@ export const profileApi = createApi({
       invalidatesTags: [{ type: 'Profile' }],
     }),
 
-    // 🔹 NEW: Update Bio
+    //  Update Bio
     updateBio: builder.mutation({
       query: (bio) => ({
         url: `/users/profile/update-bio`,

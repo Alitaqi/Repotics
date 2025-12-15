@@ -352,7 +352,7 @@ export default function DetailsStep({ onSubmit, isLoading, canSubmit }) {
         </span>
       </label>
 
-      {/* ✅ SUBMIT BUTTON - ADDED HERE */}
+      {/* SUBMIT BUTTON - ADDED HERE */}
       <div className="pt-4 border-t">
         <Button
           onClick={onSubmit}

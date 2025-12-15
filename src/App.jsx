@@ -31,7 +31,6 @@ function App() {
   // normalize & dispatch user when we get it
   useEffect(() => {
     if (data) {
-      // some backends return { user: {...} } others return user object directly
       const me = data.user ?? data;
       console.log("Dispatching setUser:", me);
       dispatch(setUser(me));

@@ -15,8 +15,8 @@ const initialState = {
     anonymous: false,
     agreed: false,
   },
-  posts: [], // ✅ all posts fetched for feed/profile
-  // ✅ Added: Post approval state
+  posts: [], // all posts fetched for feed/profile
+  // Post approval state
   postApproval: {
     isOpen: false,        // Whether approval modal is open
     isApproved: false,    // Whether post was approved
@@ -28,7 +28,6 @@ const sanitizeImages = (images = []) =>
   images.map((img) => ({
     url: img.url || URL.createObjectURL(img.file), // allow raw File and create preview
     name: img.name || img.file?.name,
-    // ❌ don't keep file in Redux
   }));
 
 const reportSlice = createSlice({
@@ -105,7 +104,7 @@ const reportSlice = createSlice({
       state.posts = state.posts.filter((p) => p._id !== postId);
     },
     
-    // ✅ Custom action to prepare post for approval
+    // Custom action to prepare post for approval
     prepareForApproval(state) {
       // This ensures all data is properly formatted for the approval view
       // No state changes needed here, just a placeholder for future logic
@@ -113,7 +112,7 @@ const reportSlice = createSlice({
   },
 });
 
-// 👇 Custom safe dispatcher (to sanitize before updating draft)
+// Custom safe dispatcher (to sanitize before updating draft)
 export const safeUpdateDraft = (payload) => (dispatch) => {
   const sanitized = { ...payload };
 
@@ -135,7 +134,6 @@ export const {
   addPost,
   updatePost,
   deletePost,
-  // Export new post approval actions
   setPostApprovalOpen,
   setPostApproved,
   setPostApprovalLoading,

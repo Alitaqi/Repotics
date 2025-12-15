@@ -9,7 +9,7 @@ export const reportApi = createApi({
     baseUrl,
     credentials: "include", // send cookies
   }),
-  tagTypes: ['Posts', 'Post'], // Add this!
+  tagTypes: ['Posts', 'Post'], 
   endpoints: (builder) => ({
     createReport: builder.mutation({
       query: (formData) => ({

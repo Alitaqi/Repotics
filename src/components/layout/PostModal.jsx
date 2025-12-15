@@ -65,7 +65,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [comments, setComments] = useState([]);
   
-  // 🔥 Single source of truth for post data
+  // Single source of truth for post data
   const [postData, setPostData] = useState(post);
   
   const [addComment, { isLoading: isAdding }] = useAddCommentMutation();
@@ -91,7 +91,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
   //if (!post) return null;
   if (!post || !postData) return null;
 
-  // 🔥 UPDATED: Get separate upvote and downvote counts
+  //  Get separate upvote and downvote counts
   const upvoteCount = typeof postData.upvotes === 'number' 
     ? postData.upvotes 
     : (postData.upvotes?.length || 0);
@@ -135,7 +135,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
     }
   };
 
-  // 🔥 UPDATED: Voting with separate counters
+  //Voting with separate counters
   const handleVote = async (type) => {
     if (!currentUser) return;
 
@@ -147,7 +147,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
         response = await downvotePost(postData._id).unwrap();
       }
       
-      // 🔥 Update with server response - separate counters
+      //Update with server response - separate counters
       setPostData(prevData => ({
         ...prevData,
         userVote: response.userVote,
@@ -258,7 +258,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
             </div>
           )}
 
-          {/* 🔥 UPDATED: Separate vote counters display */}
+          {/* Separate vote counters display */}
           <div className="flex items-center justify-between py-2 text-sm text-gray-500 border-y">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
@@ -273,7 +273,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
             <span>{comments.length} comments</span>
           </div>
 
-          {/* 🔥 UPDATED: Vote Buttons with colors */}
+          {/* Vote Buttons with colors */}
           <div className="flex justify-around py-2 border-b">
             <Button
               variant="ghost"
