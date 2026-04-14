@@ -30,8 +30,8 @@ export default function DeletePostDialog({
           {post?.crimeType && (
             <div className="p-3 bg-gray-100 rounded-lg">
               <p className="text-sm font-medium">Post Type: {post.crimeType}</p>
-              <p className="text-sm text-gray-600 truncate">
-                {post.description?.substring(0, 100)}...
+              <p className="overflow-y-auto text-sm text-gray-600 break-words max-h-20">
+                {post.description}
               </p>
             </div>
           )}
