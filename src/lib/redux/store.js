@@ -12,7 +12,7 @@ import { heatmapApi } from "./api/heatmapApi";
 import missingPersonViewReducer from "./slices/missingPersonViewSlice";
 import missingPersonReducer from "./slices/missingPersonSlice";
 import { missingPersonsApi } from './api/missingPersonsApi';
-
+import { dashboardApi } from "./api/dashboardApi";
 
 
 export const store = configureStore({
@@ -29,6 +29,7 @@ export const store = configureStore({
     [profileApi.reducerPath]: profileApi.reducer,
     [feedApi.reducerPath]: feedApi.reducer, 
     [missingPersonsApi.reducerPath]: missingPersonsApi.reducer,
+    [dashboardApi.reducerPath]: dashboardApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -37,6 +38,7 @@ export const store = configureStore({
       .concat(profileApi.middleware)
       .concat(feedApi.middleware)
       .concat(heatmapApi.middleware)
-      .concat(missingPersonsApi.middleware),
+      .concat(missingPersonsApi.middleware)
+      .concat(dashboardApi.middleware),
 });
 

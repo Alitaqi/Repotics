@@ -5,7 +5,7 @@ const baseUrl = `${import.meta.env.VITE_API_BASE_URL}/api`;
 
 export const api = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl }),
+  baseQuery: fetchBaseQuery({ baseUrl, credentials: "include" }),
   tagTypes: ["Heatmap"],
   endpoints: () => ({}),
 });
@@ -24,8 +24,11 @@ export const heatmapApi = api.injectEndpoints({
       },
       providesTags: ["Heatmap"],
     }),
+    getPatrolInsights: builder.query({
+      query: () => "/crimes/patrol-insights", // no params at all
+    }),
   }),
   overrideExisting: false,
 });
 
-export const { useGetHeatmapDataQuery } = heatmapApi;
+export const { useGetHeatmapDataQuery, useGetPatrolInsightsQuery } = heatmapApi;

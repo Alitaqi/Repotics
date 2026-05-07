@@ -4,7 +4,7 @@ import { Navigate } from "react-router-dom";
 import { useGetMeQuery } from "@/lib/redux/api/authApi";
 import { Spinner } from "flowbite-react";
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, requireVerified = false }) {
   // Fetch current user inside the route1
   // eslint-disable-next-line no-unused-vars
   const { data: user, isLoading, isSuccess } = useGetMeQuery();
@@ -23,6 +23,10 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/auth" replace />;
   }
 
+  if (requireVerified && !user?.verified) {
+    return <Navigate to="/feed" replace />;
+  }
+  
   // Render child route if user exists
   return children;
 }

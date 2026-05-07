@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
-
+import { BADGE_CONFIG, BADGE_NAME_MAP } from "@/lib/utils/badgeConfig";
 export default function ProfileCard({ user }) {
 
   // If user not loaded yet (first render)
@@ -43,7 +43,7 @@ export default function ProfileCard({ user }) {
       </div>
 
       {/* Content */}
-      <CardContent className="pt-8 text-center">
+      <CardContent className="pt-12 text-center">
         <h2 className="text-lg font-semibold">
           <Link to={`/profile/${user.username}`}>
             {user.name}
@@ -75,11 +75,25 @@ export default function ProfileCard({ user }) {
         {/* Badges */}
         {user?.badges?.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2">
-            {user.badges.map((badge, i) => (
-              <Badge key={i} variant="secondary">
-                {badge}
-              </Badge>
-            ))}
+            {user.badges.map((badge, i) => {
+              const mappedKey = BADGE_NAME_MAP[badge] || "batman";
+              const config = BADGE_CONFIG[mappedKey];
+              const Icon = config.icon;
+
+              return (
+                <Badge
+                  key={i}
+                  className={`
+                    flex items-center gap-1 px-2 py-1 text-xs
+                    ${config.color}
+                    transition hover:scale-105
+                  `}
+                >
+                  <Icon className="w-3 h-3" />
+                  {config.label}
+                </Badge>
+              );
+            })}
           </div>
         )}
       </CardContent>

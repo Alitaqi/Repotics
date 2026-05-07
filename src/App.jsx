@@ -3,16 +3,20 @@ import { BrowserRouter, Routes, Route, useLocation, matchPath } from "react-rout
 import Home from "./pages/Home";
 import Feed from "./pages/Feed";
 import Auth from "./pages/Auth";
+import Dashboard from "./pages/dashboard/DashboardLayout";
 import Profile from "./pages/Profile";
 import FeedNav from "./components/layout/FeedNav";
 import Setting from "./pages/Setting";
 import Heatmap from "./pages/Heatmap";
+import Analytics from "./pages/dashboard/Analytics";
+import CrimeReports from "./pages/dashboard/CrimeReports";
+import MissingPersonsDash from "./pages/dashboard/MissingPersons";
 import MissingPersons from "./pages/MissingPersons";
 import MissingPersonView from "./pages/MissingPersonView";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useGetMeQuery } from "@/lib/redux/api/authApi";
 import { useDispatch } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { setUser, logout } from "@/lib/redux/slices/authSlice";
 import { Navigate } from "react-router-dom";
 
@@ -63,6 +67,8 @@ function App() {
     }
   }, [data, isLoading, dispatch]);
 
+  const [searchParams, setSearchParams] = useState(null);
+
   const showNavbarRoutes = ["/feed", "/profile/:username", "/settings", "/heatmap", "/missing-persons", "/missingperson/:id"];
   const shouldShowNavbar = showNavbarRoutes.some((route) =>
     matchPath({ path: route, end: false }, location.pathname)
@@ -74,7 +80,7 @@ function App() {
 
   return (
     <div>
-      {shouldShowNavbar && <FeedNav />}
+      {shouldShowNavbar && <FeedNav onSearch={setSearchParams} />}
 
       <Routes>
         <Route path="/" element={<Navigate to="/feed" replace />} />
@@ -84,7 +90,7 @@ function App() {
           path="/feed"
           element={
             <ProtectedRoute>
-              <Feed />
+              <Feed externalSearchParams={searchParams} onClearSearch={() => setSearchParams(null)} />
             </ProtectedRoute>
           }
         />
@@ -132,6 +138,19 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requireVerified={true}>
+              <Dashboard/>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Analytics />} />
+          <Route path="crime-reports" element={<CrimeReports />} />
+          <Route path="missing-persons" element={<MissingPersonsDash />} />
+        </Route>
       </Routes>
     </div>
   );

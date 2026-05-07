@@ -10,7 +10,7 @@ import { Camera, Loader2, Eye, EyeOff, MapPin } from "lucide-react";
 import Map from "react-map-gl";
 import { Marker } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   useUpdateProfilePictureMutation,
   useUpdateBannerPictureMutation,
@@ -18,6 +18,10 @@ import {
   useUpdateNameMutation,
   useUpdateLocationMutation,
   useUpdatePasswordMutation,
+  useSubmitVerificationMutation,
+  useGetVerificationRequestsQuery,
+  useApproveVerificationMutation,
+  useRejectVerificationMutation
 } from "@/lib/redux/api/profileApi";
 import {
   replaceProfileImage,
@@ -31,7 +35,8 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 export default function Settings() {
   const dispatch = useDispatch();
   const user = useSelector((s) => s.auth.user);
-
+  const isAdmin = user?.username === "ali1";
+  
   const profileImage = user?.profilePicture || "/default-avatar.png";
   const bannerImage = user?.bannerPicture || "/default-banner.jpg";
 
@@ -45,12 +50,22 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
+  // form state
+  const [fullName, setFullName] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [role, setRole] = useState("");
+  
   // Location states
   const [location, setLocation] = useState(user?.location || "");
   const [coords, setCoords] = useState(
     user?.location?.coordinates || { lat: 33.6844, lng: 73.0479 } // default Islamabad
   );
+
+  
 
   // keep fields synced if user changes after load
   useEffect(() => {
@@ -72,6 +87,15 @@ export default function Settings() {
     useUpdateLocationMutation();
   const [updatePassword, { isLoading: isUpdatingPassword }] =
     useUpdatePasswordMutation();
+
+  const [submitVerification, { isLoading: submitting }] = useSubmitVerificationMutation();
+
+  const { data: requests = [], refetch } = useGetVerificationRequestsQuery(undefined, {
+    skip: !isAdmin,
+  });
+
+  const [approveVerification] = useApproveVerificationMutation();
+  const [rejectVerification] = useRejectVerificationMutation();
 
   const handleProfileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -447,11 +471,119 @@ const useMyLocation = () => {
           <CardTitle>Verification</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" variant="outline">
-            Get Verified
-          </Button>
+          {isAdmin ? (
+            <Button className="w-full" onClick={() => setShowAdminModal(true)}>
+              Manage Verification Requests
+            </Button>
+          ) : user?.verified ? (
+            <Button className="w-full" disabled>
+              Verified ✅
+            </Button>
+          ) : (
+            <Button className="w-full" onClick={() => setShowRequestModal(true)}>
+              Get Verified
+            </Button>
+          )}
         </CardContent>
       </Card>
+      <Dialog open={showRequestModal} onOpenChange={setShowRequestModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Verification</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Input
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+            <Input
+              placeholder="Organization"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+            />
+            <Input
+              placeholder="Role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            />
+
+            <Button
+              className="w-full"
+              disabled={submitting}
+              onClick={async () => {
+                try {
+                  await submitVerification({ fullName, organization, role }).unwrap();
+                  setShowRequestModal(false);
+                  setFullName("");
+                  setOrganization("");
+                  setRole("");
+                  alert("Request submitted!");
+                } catch (err) {
+                  alert(err?.data?.message || "Error submitting request");
+                }
+              }}
+            >
+              {submitting ? "Submitting..." : "Submit Request"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showAdminModal} onOpenChange={setShowAdminModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Verification Requests</DialogTitle>
+          </DialogHeader>
+
+          <div className="overflow-y-auto max-h-[400px] space-y-3">
+            {requests.length === 0 ? (
+              <p className="text-center text-gray-500">No requests</p>
+            ) : (
+              requests.map((req) => (
+                <div
+                  key={req._id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold">{req.fullName}</p>
+                    <p className="text-sm text-gray-500">@{req.user?.username}</p>
+                    <p className="text-xs text-gray-400">{req.organization}</p>
+                    <p className="text-xs text-gray-400">{req.role}</p>
+                    <p className="text-xs text-gray-500">Status: {req.status}</p>
+                  </div>
+
+                  {req.status === "pending" && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={async () => {
+                          await approveVerification(req._id);
+                          refetch();
+                        }}
+                      >
+                        Approve
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={async () => {
+                          await rejectVerification(req._id);
+                          refetch();
+                        }}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

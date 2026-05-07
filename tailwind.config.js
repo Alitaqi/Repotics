@@ -10,7 +10,11 @@ export default {
         roboto: ['Roboto', 'sans-serif'],
         opensans: ['Open Sans', 'sans-serif'],
       },
+      width: {
+        '[--sidebar-width]': 'var(--sidebar-width)',
+        '[--sidebar-width-icon]': 'var(--sidebar-width-icon)',
+      },
     },
   },
-  plugins: [],
+  plugins: [require('@tailwindcss/line-clamp')]
 }

@@ -25,7 +25,17 @@ export const feedApi = createApi({
         return currentArg?.cursor !== previousArg?.cursor;
       },
     }),
+    searchFeed: builder.query({
+      query: ({ q, includePosts = true, includeUsers = true, page = 1, limit = 10 }) => ({
+        url: "/searchbar/search",
+        params: { q, includePosts, includeUsers, page, limit },
+      }),
+    }),
+    //for right sidebar in feed
+    getTrendingCrimes: builder.query({
+      query: () => "/trending/trending-crimes",
+    }),
   }),
 });
 
-export const { useGetPersonalizedFeedQuery } = feedApi;
+export const { useGetPersonalizedFeedQuery, useSearchFeedQuery, useGetTrendingCrimesQuery,  } = feedApi;

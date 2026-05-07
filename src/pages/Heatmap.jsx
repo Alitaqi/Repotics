@@ -15,6 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import PostModal from "@/components/layout/PostModal";
+import AIInsightsPanel from "@/components/layout/AIInsightsPanel";
+import { useGetPatrolInsightsQuery } from "@/lib/redux/api/heatmapApi";
+import { Brain } from "lucide-react";
+import { useSelector } from "react-redux";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -113,6 +117,9 @@ function SimplePostView({ post }) {
 }
 
 export default function HeatmapPage() {
+  const currentUser = useSelector((state) => state.auth.user)
+  
+  
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const [mapInitialized, setMapInitialized] = useState(false);
@@ -122,6 +129,7 @@ export default function HeatmapPage() {
   const [uiCrimeType, setUiCrimeType] = useState("");
   const [uiStartDate, setUiStartDate] = useState("");
   const [uiEndDate, setUiEndDate] = useState("");
+  const [showAIPanel, setShowAIPanel] = useState(false)
   
   // Applied State (what's actually being used for the query)
   const [appliedFilters, setAppliedFilters] = useState({
@@ -607,10 +615,36 @@ export default function HeatmapPage() {
                 </Button>
               </div>
             </form>
+            
           </CardContent>
         </Card>
       </div>
 
+      {currentUser?.verified && (
+        <>
+          {/* AI Insights Button — floats over the map */}
+          {!showAIPanel && (
+            <button
+              onClick={() => setShowAIPanel(true)}
+              className="absolute z-39 flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-lg top-22 left-90"
+            >
+              <Brain className="size-4" />
+              AI Patrol Insights
+            </button>
+          )}
+
+          {/* AI Panel — slides over the map on the left */}
+          {showAIPanel && (
+            <div className="absolute top-0 left-0 z-50 h-full overflow-hidden shadow-2xl w-96 rounded-l-2xl">
+              <AIInsightsPanel
+                // filters={appliedFilters}
+                onClose={() => setShowAIPanel(false)}
+              />
+            </div>
+          )}
+        </>
+      )}
+      
       {/* Map Container */}
       <div className="flex-1 ml-4 relative max-h-[90vh] min-h-[80vh] lg:min-h-[85vh] rounded-2xl overflow-hidden border border-gray-200 bg-gray-900">
         <div

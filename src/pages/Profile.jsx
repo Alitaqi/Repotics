@@ -39,6 +39,7 @@ import {
   useGetMeQuery
 } from "@/lib/redux/api/authApi.js";
 import { useGetUserPostsQuery } from "@/lib/redux/api/reportApi";
+import { BADGE_CONFIG, BADGE_NAME_MAP } from "@/lib/utils/badgeConfig";
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -540,11 +541,25 @@ export default function Profile() {
                   <CardTitle>Badges</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
-                  {user.badges.map((badge, i) => (
-                    <Badge key={i} variant="secondary">
-                      {badge}
-                    </Badge>
-                  ))}
+                  {user.badges.map((badge, i) => {
+                    const mappedKey = BADGE_NAME_MAP[badge] || "batman";
+                    const config = BADGE_CONFIG[mappedKey];
+                    const Icon = config.icon;
+
+                    return (
+                      <Badge
+                        key={i}
+                        className={`
+                          flex items-center gap-1 px-3 py-1 text-xs font-medium
+                          ${config.color}
+                          transition-all duration-200 hover:scale-105 hover:shadow-md
+                        `}
+                      >
+                        <Icon className="w-3 h-3" />
+                        {config.label}
+                      </Badge>
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}

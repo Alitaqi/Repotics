@@ -102,6 +102,50 @@ export const profileApi = createApi({
         body: { currentPassword, newPassword },
       }),
     }),
+    submitVerification: builder.mutation({
+      query: (data) => ({
+        url: "/verification/request",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    getVerificationRequests: builder.query({
+      query: () => "/verification/requests",
+    }),
+
+    approveVerification: builder.mutation({
+      query: (id) => ({
+        url: `/verification/${id}/approve`,
+        method: "PATCH",
+      }),
+    }),
+
+    rejectVerification: builder.mutation({
+      query: (id) => ({
+        url: `/verification/${id}/reject`,
+        method: "PATCH",
+      }),
+    }),
+    getNotifications: builder.query({
+      query: () => "/notifications",
+      providesTags: ["Notifications"],
+    }),
+
+    markAsRead: builder.mutation({
+      query: (id) => ({
+        url: `/notifications/${id}/read`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
+    markAllAsRead: builder.mutation({
+      query: () => ({
+        url: "/notifications/read-all",
+        method: "PUT",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
   }),
 });
 
@@ -116,5 +160,12 @@ export const {
   useUpdateBioMutation,
   useUpdateNameMutation,
   useUpdateLocationMutation,
-  useUpdatePasswordMutation
+  useUpdatePasswordMutation,
+  useSubmitVerificationMutation,
+  useGetVerificationRequestsQuery,
+  useApproveVerificationMutation,
+  useRejectVerificationMutation,
+  useGetNotificationsQuery,
+  useMarkAsReadMutation,
+  useMarkAllAsReadMutation,
 } = profileApi;

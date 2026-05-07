@@ -45,6 +45,8 @@ import {
 } from "@/lib/redux/api/profileApi";
 import { useNavigate } from "react-router-dom";
 import PostModal from "./PostModal";
+import AISummaryModal from "./CrimeReports/AISummaryModal"
+import { FileText } from "lucide-react";
 
 export default function PostCard({ post, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
@@ -63,6 +65,7 @@ export default function PostCard({ post, refetchPosts }) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   // Follow logic
   const { data: followStatusData } = useCheckFollowStatusQuery(
@@ -227,6 +230,14 @@ export default function PostCard({ post, refetchPosts }) {
 
   if (!post) return null;
 
+  const statusStyles = {
+    Reported: "bg-gray-100 text-gray-700 hover:bg-gray-100",
+    "Under Investigation": "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
+    Assigned: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+    Resolved: "bg-green-100 text-green-700 hover:bg-green-100",
+    Closed: "bg-red-100 text-red-700 hover:bg-red-100",
+  };
+
   return (
     <>
       <Card className="shadow-sm rounded-xl">
@@ -247,6 +258,14 @@ export default function PostCard({ post, refetchPosts }) {
                   <h3 className="font-semibold">{postData.user?.name}</h3>
                   {postData.user?.verified && <CheckCircle2 className="w-4 h-4 text-blue-500" />}
                   {postData.crimeType && <Badge variant="secondary">{postData.crimeType}</Badge>}
+                  {postData.status && (
+                    <Badge
+                      onClick={(e) => e.stopPropagation()}
+                      className={`${statusStyles[postData.status] || "bg-gray-100 text-gray-700"} ml-1`}
+                    >
+                      {postData.status}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-gray-500">
                   @{postData.user?.username} • {new Date(postData.createdAt).toLocaleString()}
@@ -256,6 +275,20 @@ export default function PostCard({ post, refetchPosts }) {
 
             {/* Top Right */}
             <div className="flex items-center gap-2">
+              {/* AI BUTTON */}
+              {postData.aiReport && currentUser?.verified && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation(); // IMPORTANT (same issue as before)
+                    setAiModalOpen(true);
+                  }}
+                  className="hover:bg-indigo-50"
+                >
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                </Button>
+              )}
               {!isOwner && currentUser && postData.user?.username && !postData.anonymous && (
                 <Button
                   variant={isFollowingUser ? "outline" : "default"}
@@ -545,6 +578,13 @@ export default function PostCard({ post, refetchPosts }) {
           background: white;
         }
       `}</style>
+      
+      <AISummaryModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        post={postData}
+      />
     </>
+    
   );
 }

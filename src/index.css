@@ -46,7 +46,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-roboto: 'Roboto', sans-serif,' Segoe UI Emoji';
   --font-opensans: 'Open Sans', sans-serif, 'Segoe UI Emoji';
-  
+
 }
 
 :root {
@@ -156,4 +156,52 @@
 .hide-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+
+/* tredningc crime news style bar*/
+/* scrolling animation */
+@keyframes ticker {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-wrapper {
+  overflow: hidden;
+  position: relative;
+}
+
+.ticker-content {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker 15s linear infinite;
+}
+
+.ticker-wrapper:hover .ticker-content {
+  animation-play-state: paused;
+}
+
+
+.ticker-wrapper::before,
+.ticker-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 20px;
+  height: 100%;
+  z-index: 2;
+}
+
+.ticker-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, white, transparent);
+}
+
+.ticker-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, white, transparent);
 }
