@@ -68,6 +68,9 @@ export default function Navbar({ onSearch }) {
           <Link to="/feed">
             <img src={Logo} alt="Logo" className="object-cover w-10 h-10 rounded-full cursor-pointer" />
           </Link>
+          <h1 onClick={() => navigate("/feed")} className="text-2xl font-black tracking-tight text-[#1B4FCE] select-none ml-2 mt-1 hover:cursor-pointer">
+            Reportics
+          </h1>
         </div>
 
         {/* Middle */}
@@ -96,7 +99,7 @@ export default function Navbar({ onSearch }) {
               </div>
 
               {/* Search button */}
-              <Button onClick={handleSearch} size="sm" className="shrink-0">
+              <Button onClick={handleSearch} size="sm" className="shrink-0 bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white">
                 Search
               </Button>
 
@@ -104,7 +107,11 @@ export default function Navbar({ onSearch }) {
               <Button
                 variant={showFilters ? "default" : "outline"}
                 size="icon"
-                className="shrink-0"
+                className={`shrink-0 transition-colors ${
+                  showFilters
+                    ? "bg-[#1B4FCE] text-white hover:bg-[#1B4FCE]/90 border-[#1B4FCE]"
+                    : "hover:border-[#1B4FCE] hover:text-[#1B4FCE]"
+                }`}
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <SlidersHorizontal className="size-4" />
@@ -215,6 +222,7 @@ export default function Navbar({ onSearch }) {
                 id="include-posts"
                 checked={includePosts}
                 onCheckedChange={setIncludePosts}
+                className="data-[state=checked]:bg-[#1B4FCE]"
               />
               <Label htmlFor="include-posts" className="text-sm cursor-pointer">Include Posts</Label>
             </div>
@@ -223,6 +231,7 @@ export default function Navbar({ onSearch }) {
                 id="include-users"
                 checked={includeUsers}
                 onCheckedChange={setIncludeUsers}
+                className="data-[state=checked]:bg-[#1B4FCE]"
               />
               <Label htmlFor="include-users" className="text-sm cursor-pointer">Include Users</Label>
             </div>
@@ -252,15 +261,15 @@ export default function Navbar({ onSearch }) {
                     onKeyDown={handleKeyDown}
                   />
                 </div>
-                <Button onClick={handleSearch} size="sm">Search</Button>
+                <Button className="shrink-0 bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white"  onClick={handleSearch} size="sm">Search</Button>
               </div>
               <div className="flex gap-4">
                 <div className="flex items-center gap-2">
-                  <Switch id="m-posts" checked={includePosts} onCheckedChange={setIncludePosts} />
+                  <Switch className="data-[state=checked]:bg-[#1B4FCE]" id="m-posts" checked={includePosts} onCheckedChange={setIncludePosts} />
                   <Label htmlFor="m-posts" className="text-sm">Posts</Label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Switch id="m-users" checked={includeUsers} onCheckedChange={setIncludeUsers} />
+                  <Switch className="data-[state=checked]:bg-[#1B4FCE]" id="m-users" checked={includeUsers} onCheckedChange={setIncludeUsers} />
                   <Label htmlFor="m-users" className="text-sm">Users</Label>
                 </div>
               </div>

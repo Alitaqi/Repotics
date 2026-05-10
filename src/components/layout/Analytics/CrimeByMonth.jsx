@@ -46,9 +46,9 @@ export default function CrimeByTimeofDay() {
               <Area
                 dataKey="count"
                 type="natural"
-                fill="var(--color-count)"
+                fill="blue"
                 fillOpacity={0.4}
-                stroke="var(--color-count)"
+                stroke="blue"
               />
             </AreaChart>
           </ChartContainer>

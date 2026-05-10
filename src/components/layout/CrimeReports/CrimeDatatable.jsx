@@ -31,7 +31,10 @@ const crimeTypes = [
 ]
 
 const statusOptions = ["Reported","Under Investigation","Assigned","Resolved","Closed"]
-
+const themeButton =
+  "bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white";
+const themeOutlineButton =
+  "border-[#1B4FCE] text-[#1B4FCE] hover:bg-[#1B4FCE] hover:text-white";
 const statusStyles = {
   Reported: "bg-gray-100 text-gray-700 hover:bg-gray-100",
   "Under Investigation": "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
@@ -255,14 +258,14 @@ const CrimeDatatable = () => {
                 onChange={(v) => { setCrimeType(v); setPage(1); }} onClear={() => { setCrimeType(""); setPage(1); }} />
 
               {hasFilters && (
-                <Button variant="ghost" size="sm" className="shrink-0 text-muted-foreground" onClick={resetFilters}>
+                <Button variant="ghost" size="sm" className={`shrink-0 text-muted-foreground  ${themeOutlineButton}`} onClick={resetFilters}>
                   Reset
                 </Button>
               )}
               {selected.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="default" className="ml-2">
+                    <Button variant="default" className={`ml-2 ${themeButton}`}>
                       Change Status ({selected.length})
                     </Button>
                   </DropdownMenuTrigger>
@@ -460,7 +463,11 @@ const CrimeDatatable = () => {
                   p === "..." ? (
                     <span key={`dots-${i}`} className="px-1 text-sm text-muted-foreground">…</span>
                   ) : (
-                    <Button key={p} variant={page === p ? "default" : "outline"} size="icon" className="text-xs size-8" onClick={() => setPage(p)}>
+                    <Button key={p} variant={page === p ? "default" : "outline"} size="icon" className={`text-xs size-8 ${
+                      page === p
+                        ? "bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white"
+                        : "text-[#1B4FCE] hover:bg-[#1B4FCE]/10"
+                    }`} onClick={() => setPage(p)}>
                       {p}
                     </Button>
                   )

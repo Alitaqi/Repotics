@@ -284,7 +284,7 @@ export default function MissingPersonComment({ comment, missingPersonId, refetch
               className="min-h-[60px] text-sm"
             />
             <div className="flex flex-col gap-1">
-              <Button size="sm" onClick={handleAddReply} disabled={!replyText.trim()}>
+              <Button size="sm" onClick={handleAddReply} disabled={!replyText.trim()} className="bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white">
                 Post
               </Button>
               <Button variant="outline" size="sm" onClick={() => setShowReply(false)}>

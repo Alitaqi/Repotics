@@ -33,6 +33,11 @@ const statusStyles = {
   Found: "bg-green-100 text-green-700 hover:bg-green-100",
   Unknown: "bg-gray-100 text-gray-700 hover:bg-gray-100",
 }
+const themeButton =
+  "bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white border-[#1B4FCE]";
+
+const themeOutlineButton =
+  "text-[#1B4FCE] hover:bg-[#1B4FCE] hover:text-white";
 
 const FilterDropdown = ({ label, value, options, onChange, onClear }) => (
   <DropdownMenu>
@@ -255,14 +260,14 @@ const MissingPersonsTable = () => {
               />
 
               {hasFilters && (
-                <Button variant="ghost" size="sm" className="shrink-0 text-muted-foreground" onClick={resetFilters}>
+                <Button variant="ghost" size="sm" className={`shrink-0 text-muted-foreground ${themeOutlineButton}`} onClick={resetFilters}>
                   Reset
                 </Button>
               )}
               {selected.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="default" className="ml-2">
+                    <Button variant="default" className={`ml-2 ${themeButton}`}>
                       Change Status ({selected.length})
                     </Button>
                   </DropdownMenuTrigger> 
@@ -456,10 +461,10 @@ const MissingPersonsTable = () => {
                 <span className="font-medium text-foreground">{pagination.total}</span> records
               </p>
               <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="size-8" disabled={page === 1} onClick={() => setPage(1)}>
+                <Button variant="outline" size="icon" className={`size-8 ${themeOutlineButton}`} disabled={page === 1} onClick={() => setPage(1)}>
                   <ChevronsLeft className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="size-8" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                <Button variant="outline" size="icon" className={`size-8 ${themeOutlineButton}`} disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                   <ChevronLeft className="size-4" />
                 </Button>
                 {getPageNumbers().map((p, i) =>
@@ -471,10 +476,10 @@ const MissingPersonsTable = () => {
                     </Button>
                   )
                 )}
-                <Button variant="outline" size="icon" className="size-8" disabled={page === pagination.totalPages} onClick={() => setPage((p) => p + 1)}>
+                <Button variant="outline" size="icon" className={`size-8 ${themeOutlineButton}`} disabled={page === pagination.totalPages} onClick={() => setPage((p) => p + 1)}>
                   <ChevronRight className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="size-8" disabled={page === pagination.totalPages} onClick={() => setPage(pagination.totalPages)}>
+                <Button variant="outline" size="icon" className={`size-8 ${themeOutlineButton}`} disabled={page === pagination.totalPages} onClick={() => setPage(pagination.totalPages)}>
                   <ChevronsRight className="size-4" />
                 </Button>
               </div>

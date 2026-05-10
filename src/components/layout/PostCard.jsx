@@ -390,7 +390,14 @@ export default function PostCard({ post, refetchPosts }) {
                 {downvoteCount} downvotes
               </span>
             </div>
-            <span>{comments.length} comments</span>
+            <span>
+            {
+              comments.reduce(
+                (total, comment) => total + 1 + (comment.replies?.length || 0),
+                0
+              )
+            } comments
+          </span>
           </div>
 
           <hr className="my-3" />
@@ -446,7 +453,7 @@ export default function PostCard({ post, refetchPosts }) {
                     <Button variant="outline" size="sm" onClick={() => setNewComment("")}>
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim() || !currentUser}>
+                    <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim() || !currentUser} className="bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white">
                       Post Comment
                     </Button>
                   </div>

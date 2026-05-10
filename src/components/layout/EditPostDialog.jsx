@@ -83,6 +83,7 @@ export default function EditPostDialog({
             <Button 
               onClick={handleSave}
               disabled={isLoading || !description.trim()}
+              className="bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white"
             >
               {isLoading ? (
                 <>

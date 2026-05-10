@@ -10,7 +10,7 @@ export const api = createApi({
   endpoints: () => ({}),
 });
 
-export const heatmapApi = api.injectEndpoints({
+const heatmapApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getHeatmapData: builder.query({
       query: ({ city, type, startDate, endDate } = {}) => {
@@ -30,5 +30,6 @@ export const heatmapApi = api.injectEndpoints({
   }),
   overrideExisting: false,
 });
+export default heatmapApi;
 
 export const { useGetHeatmapDataQuery, useGetPatrolInsightsQuery } = heatmapApi;

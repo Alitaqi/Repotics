@@ -26,7 +26,7 @@ const chartConfig = {
 
   Missing: {
     label: "Missing",
-    color: "var(--chart-1)",
+    color: "orange",
   },
   Found: {
     label: "Found",

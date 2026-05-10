@@ -242,7 +242,7 @@ export default function ReportWizard({ open, onOpenChange, onPostCreated }) {
           )}
 
           {step === 1 && (
-            <Button onClick={handleNext} disabled={!canGoNext}>
+            <Button className="bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white" onClick={handleNext} disabled={!canGoNext}>
               Next
             </Button>
           )}

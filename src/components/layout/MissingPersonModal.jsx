@@ -636,7 +636,7 @@ export default function MissingPersonModal() {
             <Button
               onClick={() => setStep(step + 1)}
               disabled={!step1Valid || isLoading}
-              className="px-6 text-white bg-black hover:bg-gray-800"
+              className="px-6 text-primary-foreground bg-[#1B4FCE] hover:bg-[#1B4FCE]/90"
             >
               Next
             </Button>
@@ -644,7 +644,7 @@ export default function MissingPersonModal() {
             <Button
               onClick={handleSubmit}
               disabled={!step2Valid || isLoading}
-              className="px-6 text-white bg-black hover:bg-gray-800"
+              className="px-6 text-white bg-[#1B4FCE] hover:bg-[#1B4FCE]/90"
             >
               {isLoading ? (
                 <>

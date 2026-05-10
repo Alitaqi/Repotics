@@ -270,7 +270,14 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                 {downvoteCount} downvotes
               </span>
             </div>
-            <span>{comments.length} comments</span>
+            <span>
+              {
+                comments.reduce(
+                  (total, comment) => total + 1 + (comment.replies?.length || 0),
+                  0
+                )
+              } comments
+            </span>
           </div>
 
           {/* Vote Buttons with colors */}
@@ -340,7 +347,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                   placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="min-h-[70px]"
+                  className="min-h-[70px]" 
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                       handleAddComment();
@@ -357,6 +364,7 @@ export default function PostModal({ selectedPostId, handleClosePost, post, refet
                   </Button>
                   <Button
                     size="sm"
+                    className="bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white"
                     onClick={handleAddComment}
                     disabled={!newComment.trim() || isAdding || !currentUser}
                   >

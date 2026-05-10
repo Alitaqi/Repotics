@@ -8,7 +8,7 @@ import { profileApi } from "./api/profileApi";
 import { feedApi } from "./api/feedApi";
 import profileReducer from "./slices/profileSlice";
 import postReducer from "./slices/postSlice";
-import { heatmapApi } from "./api/heatmapApi";
+import heatmapApi from "./api/heatmapApi";
 import missingPersonViewReducer from "./slices/missingPersonViewSlice";
 import missingPersonReducer from "./slices/missingPersonSlice";
 import { missingPersonsApi } from './api/missingPersonsApi';

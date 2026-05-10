@@ -18,6 +18,7 @@ import {
 import debounce from "lodash.debounce";
 import Logo from "@/assets/Logo.svg";
 
+
 export default function Auth() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export default function Auth() {
   const checkUsername = debounce(async (username) => {
     if (!username) return setUsernameAvailable(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/users/check-username?username=${username}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/check-username?username=${username}`);
       const data = await res.json();
       setUsernameAvailable(data.available);
     } catch (err) {
@@ -65,9 +66,19 @@ export default function Auth() {
     return age >= 16;
   };
 
+  const isStrongPassword = (password) => {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/.test(password);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isOldEnough(form.dob)) {
+      if (!isLogin && !isStrongPassword(form.password)) {
+        alert(
+          "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+        );
+        return;
+      }
       setShowDobAlert(true);
       return;
     }

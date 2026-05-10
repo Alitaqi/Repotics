@@ -198,7 +198,7 @@ export default function DetailsStep({ onSubmit, isLoading, canSubmit }) {
   return (
     <div ref={wrapperRef} className="space-y-6">
       {/* Section Heading */}
-      <div className="px-4 py-2 text-white bg-black rounded-lg shadow">
+      <div className="px-4 py-2 text-black bg-white rounded-lg shadow">
         <h2 className="text-lg font-semibold">Incident Details</h2>
         <p className="text-sm opacity-90">Please provide details of the crime below.</p>
       </div>
@@ -318,9 +318,9 @@ export default function DetailsStep({ onSubmit, isLoading, canSubmit }) {
         <Button
           onClick={useMyLocation}
           disabled={isLocationLoading}
-          className="mt-2 text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-2 text-white bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 disabled:opacity-50 disabled:cursor-not-allowed "
         >
-          {isLocationLoading ? (
+          {isLocationLoading ? ( 
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <MapPin className="w-4 h-4 mr-2" />

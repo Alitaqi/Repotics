@@ -70,7 +70,8 @@ export default function CrimeTypeDistribution() {
 
             <Bar
               dataKey="count"
-              fill="var(--color-count)"
+              // fill="#4f46e5"
+              fill="#4f45e5"
               radius={8}
             />
           </BarChart>

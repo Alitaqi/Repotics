@@ -351,7 +351,7 @@ export default function PostApproval({
           <Button
             onClick={handleApprove}
             disabled={isLoading || !tempSummary?.trim()}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

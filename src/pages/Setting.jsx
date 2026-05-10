@@ -31,6 +31,8 @@ import {
 } from "@/lib/redux/slices/profileSlice";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+const themeButton =
+  "bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white";
 
 export default function Settings() {
   const dispatch = useDispatch();
@@ -245,9 +247,9 @@ const useMyLocation = () => {
               className="hidden"
             />
             <Button
-              variant="secondary"
+              
               size="sm"
-              className="absolute bottom-2 right-2"
+              className={`absolute bottom-2 right-2 ${themeButton}`}
               onClick={() => bannerInputRef.current?.click()}
               disabled={isUpdatingBanner}
             >
@@ -281,6 +283,7 @@ const useMyLocation = () => {
           />
           <Button
             onClick={() => profileInputRef.current?.click()}
+            className={themeButton}
             disabled={isUpdatingProfile}
           >
             {isUpdatingProfile ? (
@@ -302,7 +305,7 @@ const useMyLocation = () => {
             <label className="text-sm font-medium">Name</label>
             <div className="flex gap-2 mt-1">
               <Input value={name} onChange={(e) => setName(e.target.value)} />
-              <Button onClick={saveName} disabled={isUpdatingName}>
+              <Button onClick={saveName} disabled={isUpdatingName} className={themeButton}> 
                 Save
               </Button>
             </div>
@@ -375,7 +378,7 @@ const useMyLocation = () => {
                 <Button
                   onClick={useMyLocation}
                   disabled={isLocating}
-                  className="text-white bg-black hover:bg-gray-800"
+                  className= {`text-white bg-black hover:bg-gray-800  ${themeButton}`}
                 >
                   {isLocating ? (
                     <>
@@ -390,7 +393,7 @@ const useMyLocation = () => {
                   )}
                 </Button>
 
-                <Button onClick={saveLocation} disabled={isUpdatingLocation}>
+                <Button onClick={saveLocation} disabled={isUpdatingLocation} className={themeButton}>
                   Save Location
                 </Button>
               </div>
@@ -405,7 +408,7 @@ const useMyLocation = () => {
                 value={bio}
                 onChange={(e) => setBioInput(e.target.value)}
               />
-              <Button onClick={saveBio} disabled={isUpdatingBio}>
+              <Button onClick={saveBio} disabled={isUpdatingBio} className={themeButton}>
                 Save
               </Button>
             </div>
@@ -428,7 +431,7 @@ const useMyLocation = () => {
             />
             <button
               type="button"
-              className="absolute text-gray-500 right-2 top-2"
+              className="absolute text-gray-500 right-2 top-2 "
               onClick={() => setShowCurrentPassword((prev) => !prev)}
             >
               {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -452,7 +455,7 @@ const useMyLocation = () => {
           </div>
 
           <Button
-            className="w-full"
+            className={`w-full  ${themeButton}`}
             onClick={savePassword}
             disabled={isUpdatingPassword}
           >
@@ -472,15 +475,15 @@ const useMyLocation = () => {
         </CardHeader>
         <CardContent>
           {isAdmin ? (
-            <Button className="w-full" onClick={() => setShowAdminModal(true)}>
+            <Button className={`w-full  ${themeButton}`} onClick={() => setShowAdminModal(true)}>
               Manage Verification Requests
             </Button>
           ) : user?.verified ? (
-            <Button className="w-full" disabled>
+            <Button className={`w-full  ${themeButton}`} disabled>
               Verified ✅
             </Button>
           ) : (
-            <Button className="w-full" onClick={() => setShowRequestModal(true)}>
+            <Button className={`w-full  ${themeButton}`} onClick={() => setShowRequestModal(true)}>
               Get Verified
             </Button>
           )}
@@ -510,7 +513,7 @@ const useMyLocation = () => {
             />
 
             <Button
-              className="w-full"
+              className={`w-full  ${themeButton}`}
               disabled={submitting}
               onClick={async () => {
                 try {

@@ -8,12 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useGetCrimeByTimeOfDayQuery } from "@/lib/redux/api/dashboardApi"
 
 const COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
+  "#2563eb",
+  "#10b981",
+  "#f97316",
+  "#ef4444",
+  "#8b5cf6",
+  "#14b8a6",
 ]
 
 export default function CrimeSpikeOverTime() {

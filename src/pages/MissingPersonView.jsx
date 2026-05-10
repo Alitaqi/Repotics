@@ -335,7 +335,11 @@ export default function MissingPersonView() {
                 onClick={handleUpvote}
                 disabled={isVoting}
                 variant={userHasUpvoted ? "default" : "outline"}
-                className="flex items-center gap-2"
+                className={`flex items-center gap-2 transition-colors ${
+      userHasUpvoted
+        ? "bg-green-600 text-white border-green-600 hover:bg-green-700 hover:border-green-700"
+        : "hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+    }`}
               >
                 <ThumbsUp className="w-4 h-4" />
                 <span>{person.upvotes?.length || 0}</span>
@@ -345,7 +349,11 @@ export default function MissingPersonView() {
                 onClick={handleDownvote}
                 disabled={isVoting}
                 variant={userHasDownvoted ? "default" : "outline"}
-                className="flex items-center gap-2"
+                className={`flex items-center gap-2 transition-colors ${
+      userHasDownvoted
+        ? "bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700"
+        : "hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+    }`}
               >
                 <ThumbsDown className="w-4 h-4" />
                 <span>{person.downvotes?.length || 0}</span>
@@ -373,6 +381,7 @@ export default function MissingPersonView() {
             />
             <div className="flex justify-end">
               <Button
+              className="bg-[#1B4FCE] hover:bg-[#1B4FCE]/90 text-white"
                 onClick={handleAddComment}
                 disabled={!newComment.trim()}
               >

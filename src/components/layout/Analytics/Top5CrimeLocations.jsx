@@ -91,7 +91,7 @@ export default function Top5CrimeLocations() {
 
             <Bar
               dataKey="count"
-              fill="var(--chart-1)"
+              fill="#4f46e5"
               radius={6}
             />
           </BarChart>
