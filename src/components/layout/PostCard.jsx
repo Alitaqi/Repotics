@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   MoreHorizontal, CheckCircle2, MessageCircle, Share, Flag,
   ChevronUp, ChevronDown, Edit, Trash2, Loader2,
-  ChevronLeft, ChevronRight, X
+  ChevronLeft, ChevronRight, X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,7 +21,9 @@ import {
 // Import Swiper components and styles
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Zoom, Keyboard } from 'swiper/modules';
-
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+} from "@/components/ui/dialog"
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -47,6 +49,8 @@ import { useNavigate } from "react-router-dom";
 import PostModal from "./PostModal";
 import AISummaryModal from "./CrimeReports/AISummaryModal"
 import { FileText } from "lucide-react";
+import FlagDialog from "./FlagDialog";
+import { useFlagPostMutation } from "@/lib/redux/api/reportApi"
 
 export default function PostCard({ post, refetchPosts }) {
   const currentUser = useSelector((state) => state.auth.user);
@@ -77,6 +81,44 @@ export default function PostCard({ post, refetchPosts }) {
   const [followUser, { isLoading: isFollowing }] = useFollowUserMutation();
   const [unfollowUser, { isLoading: isUnfollowing }] = useUnfollowUserMutation();
 
+  const [flagDialogOpen, setFlagDialogOpen] = useState(false)
+  const [flagPost, { isLoading: isFlagging }] = useFlagPostMutation()
+
+  // Check if current user already flagged this post
+  // const userAlreadyFlagged = postData.flags?.some(
+  //   f => f.user === currentUser?._id || f.user?._id === currentUser?._id
+  // )
+
+//   const userAlreadyFlagged = postData.flags?.some(
+//   f => f.user?.toString() === currentUser?._id?.toString() || 
+//        f.user?._id?.toString() === currentUser?._id?.toString()
+// )
+const userAlreadyFlagged = postData.userFlagged ?? false
+
+  // const handleFlag = async (reason) => {
+  //   try {
+  //     await flagPost({ postId: postData._id, reason }).unwrap()
+  //     setFlagDialogOpen(false)
+  //     // Update local state so button disables immediately
+  //     setPostData(prev => ({
+  //       ...prev,
+  //       flags: [...(prev.flags || []), { user: currentUser._id, reason }]
+  //     }))
+  //   } catch (err) {
+  //     console.error("Flag failed:", err)
+  //   }
+  // }
+
+  const handleFlag = async (reason) => {
+  try {
+    await flagPost({ postId: postData._id, reason }).unwrap()
+    setFlagDialogOpen(false)
+    setPostData(prev => ({ ...prev, userFlagged: true })) // ← simpler, no array manipulation
+  } catch (err) {
+    console.error("Flag failed:", err)
+  }
+}
+  
   const handleFollow = async () => {
     if (!post.user?.username) return;
     try {
@@ -323,10 +365,17 @@ export default function PostCard({ post, refetchPosts }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : currentUser ? (
-                <Button size="icon" variant="ghost">
-                  <Flag className="w-5 h-5" />
-                </Button>
-              ) : null}
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => !userAlreadyFlagged && setFlagDialogOpen(true)}
+                disabled={userAlreadyFlagged}
+                title={userAlreadyFlagged ? "You already flagged this post" : "Flag this post"}
+                className={userAlreadyFlagged ? "opacity-40 cursor-not-allowed" : "hover:bg-red-50 hover:text-red-500"}
+              >
+                <Flag className={`w-5 h-5 ${userAlreadyFlagged ? "text-red-400" : ""}`} />
+              </Button>
+            ) : null}
             </div>
           </div>
 
@@ -590,6 +639,13 @@ export default function PostCard({ post, refetchPosts }) {
         open={aiModalOpen}
         onClose={() => setAiModalOpen(false)}
         post={postData}
+      />
+
+      <FlagDialog
+        open={flagDialogOpen}
+        onOpenChange={setFlagDialogOpen}
+        onSubmit={handleFlag}
+        isLoading={isFlagging}
       />
     </>
     

@@ -179,6 +179,28 @@ const AISummaryModal = ({ open, onClose, post }) => {
     pdf.text(`${score.toFixed(1)}% confidence level`, margin, y)
     y += 8
 
+    // ── Flags ──
+    if (post.flagCount > 0 && post.flagBreakdown) {
+      checkNewPage(30)
+      addSectionTitle("Community Flags", [255, 120, 120])
+      
+      pdf.setFontSize(9)
+      pdf.setFont("helvetica", "normal")
+      pdf.setTextColor(200, 180, 180)
+      pdf.text(`Total flags: ${post.flagCount}`, margin, y)
+      y += 6
+
+      Object.entries(post.flagBreakdown).forEach(([reason, count]) => {
+        checkNewPage(8)
+        pdf.setTextColor(180, 150, 150)
+        pdf.text(`• ${reason}:`, margin + 3, y)
+        pdf.setTextColor(255, 120, 120)
+        pdf.text(String(count), margin + 45, y)
+        y += 5
+      })
+      y += 4
+    }
+    
     // ── Review Status ──
     checkNewPage(24)
     addSectionTitle("Review & Audit", [100, 220, 220])
@@ -383,6 +405,33 @@ const AISummaryModal = ({ open, onClose, post }) => {
               </p>
             </div>
           </div>
+
+          {/* ===== FLAGS ===== */}
+          {post.flagBreakdown && Object.keys(post.flagBreakdown).length > 0 && (
+            <div className="p-5 border rounded-xl border-white/10 bg-white/5">
+              <h3 className="mb-3 text-sm font-semibold text-red-300">
+                Community Flags ({post.flagCount || 0} total)
+              </h3>
+              <div className="space-y-2">
+                {Object.entries(post.flagBreakdown).map(([reason, count]) => (
+                  <div key={reason} className="flex items-center justify-between">
+                    <span className="text-sm text-white/70">{reason}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full bg-red-400"
+                          style={{
+                            width: `${(count / (post.flagCount || 1)) * 100}%`
+                          }}
+                        />
+                      </div>
+                      <span className="w-4 text-xs font-medium text-right text-red-300">{count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
       </ScrollArea>

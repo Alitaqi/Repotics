@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar"
 import {
   Search, MoreVertical, FileText, CalendarIcon,
   ChevronDown, X, ThumbsUp, ThumbsDown, MessageCircle,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MapPin
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MapPin, Flag
 } from "lucide-react"
 import { useGetCrimeReportsQuery, useGetPostByIdQuery } from "@/lib/redux/api/dashboardApi"
 import PostModal from "@/components/layout/PostModal"
@@ -321,6 +321,11 @@ const CrimeDatatable = () => {
                   <th className="p-3 text-sm font-medium text-left">
                     <div className="flex items-center gap-1"><MessageCircle className="size-3" /> Comments</div>
                   </th>
+                   <th className="p-3 text-sm font-medium text-left">
+                    <div className="flex items-center gap-1">
+                      <Flag className="size-3" /> Flags
+                    </div>
+                  </th>
                   <th className="p-3 text-sm font-medium text-left">Status</th>
                   <th className="p-3 text-sm font-medium text-left">AI</th>
                   <th className="w-10 p-3"></th>
@@ -343,7 +348,7 @@ const CrimeDatatable = () => {
                   </tr>
                 ) : posts.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="p-6 text-sm text-center text-muted-foreground">
+                    <td colSpan={12} className="p-6 text-sm text-center text-muted-foreground">
                       No crime reports found
                     </td>
                   </tr>
@@ -404,7 +409,13 @@ const CrimeDatatable = () => {
                       <td className="p-3 text-sm font-medium text-green-600">{item.upvotes}</td>
                       <td className="p-3 text-sm font-medium text-red-500">{item.downvotes}</td>
                       <td className="p-3 text-sm text-muted-foreground">{item.comments}</td>
-
+                      <td className="p-3 text-sm">
+                        {item.flagCount > 0 ? (
+                          <span className="font-medium text-red-500">{item.flagCount}</span>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </td>
                       <td className="p-3">
                         <Badge className={`text-xs ${statusStyles[item.status]}`}>
                           {item.status}

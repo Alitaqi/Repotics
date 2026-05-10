@@ -171,6 +171,16 @@ export const reportApi = createApi({
         { type: 'Post', id: postId },
       ],
     }),
+    flagPost: builder.mutation({
+      query: ({ postId, reason }) => ({
+        url: `/posts/${postId}/flag`,
+        method: "POST",
+        body: { reason },
+      }),
+      invalidatesTags: (result, error, { postId }) => [
+        { type: 'Post', id: postId },
+      ],
+    }),
   }),
 });
 
@@ -193,5 +203,5 @@ export const {
   useDeleteReplyMutation,
   useGetPostByIdQuery,
   useFinalizeReportMutation,
-  
+  useFlagPostMutation,
 } = reportApi;
