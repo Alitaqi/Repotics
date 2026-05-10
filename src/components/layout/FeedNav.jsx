@@ -69,7 +69,7 @@ export default function Navbar({ onSearch }) {
             <img src={Logo} alt="Logo" className="object-cover w-10 h-10 rounded-full cursor-pointer" />
           </Link>
           <h1 onClick={() => navigate("/feed")} className="text-2xl font-black tracking-tight text-[#1B4FCE] select-none ml-2 mt-1 hover:cursor-pointer">
-            Reportics
+            Repotics
           </h1>
         </div>
 

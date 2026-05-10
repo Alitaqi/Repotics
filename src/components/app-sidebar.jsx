@@ -78,7 +78,7 @@ export function AppSidebar({ ...props }) {
 
         <div className="leading-tight">
           <p className="text-sm font-bold tracking-tight text-gray-900">
-            Reportics
+            Repotics
           </p>
           <p className="text-[11px] text-gray-500">
             Crime Intelligence System
