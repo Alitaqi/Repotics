@@ -213,7 +213,7 @@ export default function MissingPersonView() {
         {/* Top-right actions */}
         <div className="relative">
           <div className="absolute top-0 right-0 z-20">
-            {isOwner ? (
+            {isOwner && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button 
@@ -238,11 +238,9 @@ export default function MissingPersonView() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Flag className="w-5 h-5 text-gray-600" />
-              </button>
-            )}
+              ) }
+              
+            {/* )} */}
           </div>
         </div>
 
